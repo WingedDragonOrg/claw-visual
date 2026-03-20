@@ -28,6 +28,11 @@ export function AgentCard({ agent }: { agent: Agent }) {
           <span className="role">{agent.role}</span>
         </div>
       </div>
+      {agent.lastActivity && (
+        <div className="agent-card-activity">
+          <span className="activity-preview">{agent.lastActivity}</span>
+        </div>
+      )}
       <div className="agent-card-body">
         <span className={`status-badge ${agent.status}`}>
           <span className="dot" />

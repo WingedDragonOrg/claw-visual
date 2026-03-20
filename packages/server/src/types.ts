@@ -9,6 +9,7 @@ export interface Agent {
   avatar: string;
   pendingTasks: number;
   heartbeatFailures: number;
+  lastActivity?: string | null;
 }
 
 export interface Activity {

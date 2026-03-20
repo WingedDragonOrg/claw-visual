@@ -84,10 +84,23 @@ function getLastActivity(filePath: string): { text: string; timestamp: number } 
   return null;
 }
 
+// Time-aware thresholds: relax during late night (23:00-08:00)
+function getStatusThresholds(): { online: number; busy: number } {
+  const hour = new Date().getHours();
+  if (hour >= 23 || hour < 8) {
+    return { online: 10, busy: 60 }; // late night: much more relaxed
+  }
+  return { online: 5, busy: 30 }; // daytime: normal
+}
+
 function resolveStatus(lastActiveMin: number): Agent['status'] {
-  if (lastActiveMin < 5) return 'online';
-  if (lastActiveMin <= 30) return 'busy';
-  return 'error';
+  // error only for objective failures (heartbeat), not inactivity
+  // For now, long inactivity = offline, not error
+  const { online, busy } = getStatusThresholds();
+  if (lastActiveMin < online) return 'online';
+  if (lastActiveMin <= busy) return 'busy';
+  if (lastActiveMin <= busy * 3) return 'away';
+  return 'offline';
 }
 
 export async function fetchAgentsFromFiles(): Promise<Agent[]> {
@@ -106,11 +119,13 @@ export async function fetchAgentsFromFiles(): Promise<Agent[]> {
     const lastMsgMin = lastMsgTime ? (now - lastMsgTime) / 60_000 : fileMtimeMin;
     const status = resolveStatus(lastMsgMin);
     const lastSeenTs = lastMsgTime ? Math.max(session.mtime, lastMsgTime) : session.mtime;
+    const lastAct = getLastActivity(session.path);
 
     agents.push({
       ...info,
       status,
       lastSeen: new Date(lastSeenTs).toISOString(),
+      lastActivity: lastAct?.text || null,
       pendingTasks: 0,
       heartbeatFailures: 0,
     });
