@@ -26,6 +26,16 @@ export function getMockAgents(): Agent[] {
       heartbeatFailures: 0,
     },
     {
+      id: 'xiakai',
+      name: '小开',
+      role: '前端/后端开发',
+      status: 'online',
+      lastSeen: minutesAgo(3),
+      avatar: 'XK',
+      pendingTasks: 4,
+      heartbeatFailures: 0,
+    },
+    {
       id: 'xiaoshen',
       name: '小审',
       role: '质量审核',

@@ -1,36 +1,40 @@
 import http from 'node:http';
 import { URL } from 'node:url';
 import cors from 'cors';
-import type { Agent, DashboardData } from './types.js';
+import type { Agent, DashboardData, Activity } from './types.js';
 import { getMockAgents, getMockActivities, getMockActivitiesForAgent } from './mock-data.js';
-import { fetchSessionsFromGateway } from './openclaw.js';
+import { fetchAgentsFromFiles, fetchActivitiesFromFiles } from './openclaw.js';
 
 const PORT = Number(process.env.PORT) || 3200;
 const POLL_INTERVAL = 30_000;
 
 let cachedAgents: Agent[] = getMockAgents();
-let useGateway = false;
+let cachedActivities: Activity[] = getMockActivities();
+let useRealData = false;
 
-async function pollGateway() {
-  const agents = await fetchSessionsFromGateway();
-  if (agents && agents.length > 0) {
-    cachedAgents = agents;
-    useGateway = true;
-  } else {
-    if (!useGateway) cachedAgents = getMockAgents();
+async function pollData() {
+  try {
+    const agents = await fetchAgentsFromFiles();
+    const activities = await fetchActivitiesFromFiles();
+    if (agents && agents.length > 0) {
+      cachedAgents = agents;
+      cachedActivities = activities;
+      useRealData = true;
+    }
+  } catch (e) {
+    console.error('[claw-visual] Error polling data:', e);
   }
 }
 
 // Initial poll + interval
-pollGateway();
-setInterval(pollGateway, POLL_INTERVAL);
+pollData();
+setInterval(pollData, POLL_INTERVAL);
 
 function json(res: http.ServerResponse, data: unknown, status = 200) {
   res.writeHead(status, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(data));
 }
 
-// Simple CORS middleware wrapper
 const corsMiddleware = cors({ origin: true });
 
 const server = http.createServer((req, res) => {
@@ -47,7 +51,9 @@ const server = http.createServer((req, res) => {
     const activityMatch = path.match(/^\/api\/agents\/([^/]+)\/activity$/);
     if (activityMatch && req.method === 'GET') {
       const agentId = activityMatch[1];
-      const activities = getMockActivitiesForAgent(agentId);
+      const activities = useRealData
+        ? cachedActivities.filter(a => a.agentId === agentId)
+        : getMockActivitiesForAgent(agentId);
       return json(res, activities);
     }
 
@@ -60,7 +66,7 @@ const server = http.createServer((req, res) => {
         busy: cachedAgents.filter(a => a.status === 'busy').length,
         error: cachedAgents.filter(a => a.status === 'error').length,
         offline: cachedAgents.filter(a => a.status === 'offline').length,
-        recentActivities: getMockActivities().slice(0, 10),
+        recentActivities: cachedActivities.slice(0, 10),
         lastUpdated: new Date().toISOString(),
       };
       return json(res, dashboard);
@@ -68,7 +74,7 @@ const server = http.createServer((req, res) => {
 
     // Health check
     if (path === '/api/health') {
-      return json(res, { status: 'ok', gateway: useGateway });
+      return json(res, { status: 'ok', dataSource: useRealData ? 'openclaw-files' : 'mock' });
     }
 
     json(res, { error: 'Not found' }, 404);
@@ -77,5 +83,5 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`[claw-visual] Server running at http://localhost:${PORT}`);
-  console.log(`[claw-visual] Gateway polling: ${process.env.OPENCLAW_GATEWAY_TOKEN ? 'enabled' : 'disabled (no token, using mock data)'}`);
+  console.log(`[claw-visual] Data source: reading from ${process.env.AGENTS_DIR || '/home/ubuntu/.openclaw/agents'}`);
 });

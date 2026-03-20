@@ -1,13 +1,10 @@
 {
   "name": "claw-visual",
   "private": true,
-  "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
-  },
+  "workspaces": ["packages/*"],
   "scripts": {
-    "dev": "pnpm -r --parallel dev",
-    "build": "pnpm -r build",
-    "dev:server": "pnpm --filter @claw-visual/server dev",
-    "dev:web": "pnpm --filter @claw-visual/web dev"
+    "dev": "bun run --filter '*' dev",
+    "dev:server": "bun run --filter @claw-visual/server dev",
+    "dev:web": "bun run --filter @claw-visual/web dev"
   }
 }
