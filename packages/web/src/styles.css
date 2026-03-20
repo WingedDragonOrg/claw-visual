@@ -20,6 +20,7 @@
   --yellow: #eab308;
   --orange: #f97316;
   --red: #ef4444;
+  --blue: #3b82f6;
   --gray: #6b7280;
   --radius: 12px;
   --radius-sm: 8px;
@@ -98,11 +99,15 @@ body {
 }
 
 /* Stats Bar */
+.stats-bar-wrapper {
+  margin-bottom: 28px;
+}
+
 .stats-bar {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-  margin-bottom: 28px;
+  margin-bottom: 8px;
 }
 
 .stat-item {
@@ -127,7 +132,13 @@ body {
   margin-top: 2px;
 }
 
-/* Agent Cards Grid */
+.stats-updated {
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Section Titles */
 .section-title {
   font-size: 14px;
   font-weight: 600;
@@ -137,9 +148,16 @@ body {
   margin-bottom: 14px;
 }
 
+.section-count {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* Agent Cards Grid */
 .agents-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 14px;
   margin-bottom: 32px;
 }
@@ -156,6 +174,15 @@ body {
 .agent-card:hover {
   background: var(--bg-hover);
   border-color: #3a3a4a;
+}
+
+/* Left accent border for online agents */
+.agent-card.status-online {
+  border-left: 3px solid var(--green);
+}
+
+.agent-card.status-busy {
+  border-left: 3px solid var(--orange);
 }
 
 .agent-card-header {
@@ -216,6 +243,20 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.agent-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.issue-count {
+  font-size: 11px;
+  color: var(--blue);
+  background: rgba(59,130,246,0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
 }
 
 .status-badge {
@@ -311,11 +352,43 @@ body {
 }
 
 .activity-action {
-  font-size: 12px;
-  color: var(--accent);
-  background: rgba(99,102,241,0.08);
+  font-size: 11px;
+  font-weight: 500;
   padding: 1px 7px;
   border-radius: 4px;
+  background: rgba(99,102,241,0.08);
+  color: var(--accent);
+}
+
+/* Action type colors */
+.activity-action.action-review {
+  background: rgba(34,197,94,0.1);
+  color: var(--green);
+}
+
+.activity-action.action-test {
+  background: rgba(59,130,246,0.1);
+  color: var(--blue);
+}
+
+.activity-action.action-deploy {
+  background: rgba(249,115,22,0.1);
+  color: var(--orange);
+}
+
+.activity-action.action-plan {
+  background: rgba(168,85,247,0.1);
+  color: #a855f7;
+}
+
+.activity-action.action-heartbeat {
+  background: rgba(107,114,128,0.1);
+  color: var(--gray);
+}
+
+.activity-action.action-work {
+  background: rgba(99,102,241,0.08);
+  color: var(--accent);
 }
 
 .activity-time {
@@ -334,7 +407,17 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Loading & Error */
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 24px 0 16px;
+  color: var(--text-muted);
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 32px;
+}
+
+/* Loading & Error & Empty */
 .loading {
   display: flex;
   align-items: center;
@@ -354,11 +437,34 @@ body {
   margin-bottom: 20px;
 }
 
+.empty-state {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
 /* Responsive */
+@media (max-width: 768px) {
+  .stats-bar {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .agents-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .app { padding: 16px 12px; }
   .header { flex-direction: column; align-items: flex-start; gap: 12px; }
   .agents-grid { grid-template-columns: 1fr; }
   .stats-bar { grid-template-columns: repeat(3, 1fr); }
   .activity-time { display: none; }
+  .activity-detail {
+    white-space: normal;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 }

@@ -10,6 +10,7 @@ export interface Agent {
   pendingTasks: number;
   heartbeatFailures: number;
   lastActivity?: string | null;
+  issueCount?: number;
 }
 
 export interface Activity {
@@ -21,6 +22,20 @@ export interface Activity {
   timestamp: string;
 }
 
+export interface GitHubIssue {
+  number: number;
+  title: string;
+  state: string;
+  assignees: { login: string }[];
+  labels: { name: string }[];
+}
+
+export interface GitHubSummary {
+  open: number;
+  byAssignee: Record<string, number>;
+  issues: GitHubIssue[];
+}
+
 export interface DashboardData {
   totalAgents: number;
   online: number;
@@ -28,6 +43,7 @@ export interface DashboardData {
   busy: number;
   error: number;
   offline: number;
+  openIssues: number;
   recentActivities: Activity[];
   lastUpdated: string;
 }

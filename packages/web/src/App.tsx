@@ -19,27 +19,29 @@ export function App() {
     <div className="app">
       <header className="header">
         <div className="header-left">
-          <h1>Claw Visual</h1>
-          <p>Team Status Dashboard</p>
+          <h1>🐾 Claw Visual</h1>
+          <p>团队作战室 · Team War Room</p>
         </div>
         <div className="header-right">
           <span className="live-dot" title="Auto-refreshing every 30s" />
           <button className="refresh-btn" onClick={refresh}>
-            Refresh
+            ↻ Refresh
           </button>
         </div>
       </header>
 
-      {agentsError && <div className="error-msg">API Error: {agentsError}</div>}
+      {agentsError && <div className="error-msg">⚠ API Error: {agentsError}</div>}
 
       {loading ? (
-        <div className="loading">Loading...</div>
+        <div className="loading">Loading team data...</div>
       ) : (
         <>
           {dashboard && <StatsBar data={dashboard} />}
 
           <section>
-            <h2 className="section-title">Members</h2>
+            <h2 className="section-title">
+              成员 <span className="section-count">{agents?.length ?? 0}</span>
+            </h2>
             <div className="agents-grid">
               {agents?.map((agent) => (
                 <AgentCard key={agent.id} agent={agent} />
@@ -47,14 +49,20 @@ export function App() {
             </div>
           </section>
 
-          {dashboard && (
+          {dashboard && dashboard.recentActivities.length > 0 && (
             <section className="activity-section">
-              <h2 className="section-title">Recent Activity</h2>
+              <h2 className="section-title">
+                活动流 <span className="section-count">{dashboard.recentActivities.length}</span>
+              </h2>
               <ActivityFeed activities={dashboard.recentActivities} />
             </section>
           )}
         </>
       )}
+
+      <footer className="footer">
+        <span>Claw Visual v0.1 · Powered by OpenClaw</span>
+      </footer>
     </div>
   );
 }

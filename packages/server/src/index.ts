@@ -1,24 +1,33 @@
 import http from 'node:http';
 import { URL } from 'node:url';
 import cors from 'cors';
-import type { Agent, DashboardData, Activity } from './types.js';
+import type { Agent, DashboardData, Activity, GitHubSummary } from './types.js';
 import { getMockAgents, getMockActivities, getMockActivitiesForAgent } from './mock-data.js';
 import { fetchAgentsFromFiles, fetchActivitiesFromFiles } from './openclaw.js';
+import { fetchGitHubIssues, getIssueCountForAgent } from './github.js';
 
 const PORT = Number(process.env.PORT) || 3200;
 const POLL_INTERVAL = 30_000;
 
 let cachedAgents: Agent[] = getMockAgents();
 let cachedActivities: Activity[] = getMockActivities();
+let cachedGitHub: GitHubSummary = { open: 0, byAssignee: {}, issues: [] };
 let useRealData = false;
 
 async function pollData() {
   try {
     const agents = await fetchAgentsFromFiles();
     const activities = await fetchActivitiesFromFiles();
+    const github = await fetchGitHubIssues();
+
     if (agents && agents.length > 0) {
+      // Attach GitHub issue counts to agents
+      for (const agent of agents) {
+        agent.issueCount = getIssueCountForAgent(github.byAssignee, agent.id);
+      }
       cachedAgents = agents;
       cachedActivities = activities;
+      cachedGitHub = github;
       useRealData = true;
     }
   } catch (e) {
@@ -66,10 +75,16 @@ const server = http.createServer((req, res) => {
         busy: cachedAgents.filter(a => a.status === 'busy').length,
         error: cachedAgents.filter(a => a.status === 'error').length,
         offline: cachedAgents.filter(a => a.status === 'offline').length,
-        recentActivities: cachedActivities.slice(0, 10),
+        openIssues: cachedGitHub.open,
+        recentActivities: cachedActivities.slice(0, 20),
         lastUpdated: new Date().toISOString(),
       };
       return json(res, dashboard);
+    }
+
+    // GET /api/issues
+    if (path === '/api/issues' && req.method === 'GET') {
+      return json(res, cachedGitHub);
     }
 
     // Health check

@@ -12,20 +12,20 @@ function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diff / 60_000);
   if (min < 1) return '刚刚';
-  if (min < 60) return `${min} 分钟前`;
+  if (min < 60) return `${min}m`;
   const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr} 小时前`;
-  return `${Math.floor(hr / 24)} 天前`;
+  if (hr < 24) return `${hr}h`;
+  return `${Math.floor(hr / 24)}d`;
 }
 
 export function AgentCard({ agent }: { agent: Agent }) {
   return (
-    <div className="agent-card">
+    <div className={`agent-card status-${agent.status}`}>
       <div className="agent-card-header">
         <div className={`agent-avatar ${agent.status}`}>{agent.avatar}</div>
         <div className="agent-info">
           <h3>{agent.name}</h3>
-          <span className="role">{agent.role}</span>
+          {agent.role && <span className="role">{agent.role}</span>}
         </div>
       </div>
       {agent.lastActivity && (
@@ -38,7 +38,14 @@ export function AgentCard({ agent }: { agent: Agent }) {
           <span className="dot" />
           {STATUS_LABELS[agent.status]}
         </span>
-        <span className="last-seen">{timeAgo(agent.lastSeen)}</span>
+        <div className="agent-card-meta">
+          {agent.issueCount !== undefined && agent.issueCount > 0 && (
+            <span className="issue-count" title={`${agent.issueCount} open issues`}>
+              📋 {agent.issueCount}
+            </span>
+          )}
+          <span className="last-seen">{timeAgo(agent.lastSeen)}</span>
+        </div>
       </div>
     </div>
   );
