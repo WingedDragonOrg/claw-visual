@@ -14,22 +14,6 @@ const PORT = Number(process.env.PORT) || 3200;
 const POLL_INTERVAL = 30_000;
 const DEBOUNCE_MS = 10 * 60 * 1000; // 10 minutes
 
-// HTTP Basic Auth
-const AUTH_USER = process.env.AUTH_USER || 'dong';
-const AUTH_PASS = process.env.AUTH_PASS || 'dong';
-const AUTH_TOKEN = Buffer.from(`${AUTH_USER}:${AUTH_PASS}`).toString('base64');
-
-function requireAuth(req: http.IncomingMessage, res: http.ServerResponse): boolean {
-  const auth = req.headers['authorization'];
-  if (auth && auth === `Basic ${AUTH_TOKEN}`) return true;
-  res.writeHead(401, {
-    'WWW-Authenticate': 'Basic realm="Claw Visual"',
-    'Content-Type': 'application/json',
-  });
-  res.end(JSON.stringify({ error: 'Unauthorized' }));
-  return false;
-}
-
 interface AgentTrackingState {
   status: Agent['status'];
   offlineSince: number | null;
@@ -145,8 +129,6 @@ const corsMiddleware = cors({ origin: CORS_ORIGINS });
 
 const server = http.createServer((req, res) => {
   corsMiddleware(req as any, res as any, async () => {
-    if (!requireAuth(req, res)) return;
-
     const url = new URL(req.url || '/', `http://localhost:${PORT}`);
     const path = url.pathname;
 
