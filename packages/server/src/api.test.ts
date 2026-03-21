@@ -11,7 +11,7 @@ describe('API Endpoints', () => {
 
   beforeAll(() => {
     state = createDefaultState();
-    const app = createApp(state);
+    const { app } = createApp(state) as any;
     server = serve({ fetch: app.fetch, port: 0 }); // random port
     request = supertest(server);
   });

@@ -25,3 +25,5 @@ export function usePolling<T>(fetcher: () => Promise<T>, intervalMs = 30_000) {
 
   return { data, error, loading, refresh };
 }
+
+export { useRealtimeData } from './hooks/useRealtimeData.js';
