@@ -2,16 +2,16 @@ import type { Agent, AgentStatus } from '../types';
 import { timeAgo } from '../utils';
 
 const STATUS_LABELS: Record<AgentStatus, string> = {
-  online: '在线',
-  away: '离开',
-  busy: '忙碌中',
-  error: '异常',
-  offline: '离线',
+  online: '\u5728\u7EBF',
+  away: '\u79BB\u5F00',
+  busy: '\u5FD9\u7896\u4E2D',
+  error: '\u5F02\u5E38',
+  offline: '\u79BB\u7EBF',
 };
 
 export function AgentCard({ agent }: { agent: Agent }) {
   return (
-    <div className={`agent-card status-${agent.status}`}>
+    <div className={`agent-card`}>
       <div className="agent-card-header">
         <div className={`agent-avatar ${agent.status}`}>{agent.avatar}</div>
         <div className="agent-info">
@@ -32,7 +32,7 @@ export function AgentCard({ agent }: { agent: Agent }) {
         <div className="agent-card-meta">
           {agent.issueCount !== undefined && agent.issueCount > 0 && (
             <span className="issue-count" title={`${agent.issueCount} open issues`}>
-              📋 {agent.issueCount}
+              {agent.issueCount} issues
             </span>
           )}
           <span className="last-seen">{timeAgo(agent.lastSeen)}</span>

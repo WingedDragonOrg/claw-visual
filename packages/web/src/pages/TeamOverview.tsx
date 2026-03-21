@@ -1,12 +1,53 @@
-import { useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { fetchAgents, fetchDashboard } from '../api';
 import { usePolling } from '../hooks';
 import { AgentCard } from '../components/AgentCard';
 import { ActivityFeed } from '../components/ActivityFeed';
 import { StatsBar } from '../components/StatsBar';
-import type { Agent, DashboardData } from '../types';
+import type { Agent, AgentStatus, DashboardData } from '../types';
+
+type FilterStatus = 'all' | AgentStatus;
+
+const FILTERS: { value: FilterStatus; label: string; className: string }[] = [
+  { value: 'all', label: 'All', className: '' },
+  { value: 'online', label: 'Online', className: 'filter-online' },
+  { value: 'busy', label: 'Busy', className: 'filter-busy' },
+  { value: 'away', label: 'Away', className: 'filter-away' },
+  { value: 'error', label: 'Error', className: 'filter-error' },
+  { value: 'offline', label: 'Offline', className: 'filter-offline' },
+];
+
+function AgentSkeleton() {
+  return (
+    <div className="skeleton-card">
+      <div className="skeleton-header">
+        <div className="skeleton skeleton-avatar" />
+        <div style={{ flex: 1 }}>
+          <div className="skeleton skeleton-line w-60" />
+          <div className="skeleton skeleton-line w-40" />
+        </div>
+      </div>
+      <div className="skeleton-body">
+        <div className="skeleton skeleton-line w-full" />
+        <div className="skeleton skeleton-line w-80" />
+      </div>
+    </div>
+  );
+}
+
+function StatsSkeleton() {
+  return (
+    <div className="skeleton-stats">
+      {Array.from({ length: 7 }).map((_, i) => (
+        <div key={i} className="skeleton skeleton-stat" />
+      ))}
+    </div>
+  );
+}
 
 export function TeamOverview() {
+  const [filter, setFilter] = useState<FilterStatus>('all');
+
   const agentsFetcher = useCallback(() => fetchAgents(), []);
   const dashFetcher = useCallback(() => fetchDashboard(), []);
 
@@ -15,38 +56,74 @@ export function TeamOverview() {
 
   const loading = agentsLoading && dashLoading;
 
+  const filteredAgents = useMemo(() => {
+    if (!agents) return [];
+    if (filter === 'all') return agents;
+    return agents.filter((a) => a.status === filter);
+  }, [agents, filter]);
+
+  const statusCounts = useMemo(() => {
+    if (!agents) return {} as Record<FilterStatus, number>;
+    const counts: Record<string, number> = { all: agents.length };
+    for (const a of agents) {
+      counts[a.status] = (counts[a.status] || 0) + 1;
+    }
+    return counts;
+  }, [agents]);
+
   return (
     <>
-      <div className="header-right" style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 1.5rem' }}>
+      <div className="page-header">
         <span className="live-dot" title="Auto-refreshing every 30s" />
-        <button className="refresh-btn" onClick={refresh}>
-          ↻ Refresh
-        </button>
+        <button className="refresh-btn" onClick={refresh}>Refresh</button>
       </div>
 
-      {agentsError && <div className="error-msg">⚠ API Error: {agentsError}</div>}
+      {agentsError && <div className="error-msg">API Error: {agentsError}</div>}
 
       {loading ? (
-        <div className="loading">Loading team data...</div>
+        <>
+          <StatsSkeleton />
+          <div className="agents-grid">
+            {Array.from({ length: 6 }).map((_, i) => <AgentSkeleton key={i} />)}
+          </div>
+        </>
       ) : (
         <>
           {dashboard && <StatsBar data={dashboard} />}
 
+          <div className="status-filter">
+            {FILTERS.map((f) => (
+              <button
+                key={f.value}
+                className={`filter-btn ${f.className} ${filter === f.value ? 'active' : ''}`}
+                onClick={() => setFilter(f.value)}
+              >
+                {f.label}
+                {statusCounts[f.value] !== undefined && (
+                  <span className="count">{statusCounts[f.value]}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
           <section>
             <h2 className="section-title">
-              成员 <span className="section-count">{agents?.length ?? 0}</span>
+              Agents <span className="section-count">{filteredAgents.length}</span>
             </h2>
             <div className="agents-grid">
-              {agents?.map((agent) => (
+              {filteredAgents.map((agent) => (
                 <AgentCard key={agent.id} agent={agent} />
               ))}
+              {filteredAgents.length === 0 && (
+                <div className="empty-state">No agents match this filter</div>
+              )}
             </div>
           </section>
 
           {dashboard && dashboard.recentActivities.length > 0 && (
             <section className="activity-section">
               <h2 className="section-title">
-                活动流 <span className="section-count">{dashboard.recentActivities.length}</span>
+                Activity <span className="section-count">{dashboard.recentActivities.length}</span>
               </h2>
               <ActivityFeed activities={dashboard.recentActivities} />
             </section>
@@ -55,7 +132,7 @@ export function TeamOverview() {
       )}
 
       <footer className="footer">
-        <span>Claw Visual v0.1 · Powered by OpenClaw</span>
+        <span>Claw Visual v0.1 &middot; Powered by OpenClaw</span>
       </footer>
     </>
   );

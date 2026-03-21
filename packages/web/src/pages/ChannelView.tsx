@@ -4,6 +4,13 @@ import { usePolling } from '../hooks';
 import { timeAgo } from '../utils';
 import type { Channel, Agent } from '../types';
 
+const TYPE_ICONS: Record<Channel['type'], string> = {
+  discord: '\uD83C\uDFAE',
+  telegram: '\u2708\uFE0F',
+  signal: '\uD83D\uDD12',
+  other: '\uD83D\uDCAC',
+};
+
 const TYPE_LABELS: Record<Channel['type'], string> = {
   discord: 'Discord',
   telegram: 'Telegram',
@@ -39,13 +46,14 @@ function ChannelCard({ channel }: { channel: Channel }) {
 
   return (
     <div
-      className={`channel-card ${hasOnline ? 'channel-online' : 'channel-offline'}`}
+      className={`channel-card`}
       onClick={handleClick}
     >
       <div className="channel-card-header">
         <div className="channel-info">
           <h3>{channel.name}</h3>
           <span className={`channel-type-badge type-${channel.type}`}>
+            <span className="channel-type-icon">{TYPE_ICONS[channel.type]}</span>
             {TYPE_LABELS[channel.type]}
           </span>
         </div>
@@ -58,6 +66,34 @@ function ChannelCard({ channel }: { channel: Channel }) {
       {channel.lastActivity && (
         <div className="channel-meta">
           <span className="last-seen">{timeAgo(channel.lastActivity)}</span>
+        </div>
+      )}
+
+      {/* Avatar stack preview */}
+      {!expanded && agents && agents.length > 0 && (
+        <div className="channel-avatar-stack">
+          {agents.slice(0, 5).map((agent) => (
+            <div key={agent.id} className={`avatar-item ${agent.status}`} title={agent.name}>
+              {agent.avatar}
+            </div>
+          ))}
+          {agents.length > 5 && (
+            <div className="avatar-more">+{agents.length - 5}</div>
+          )}
+        </div>
+      )}
+
+      {/* Show avatar stack when not yet loaded but has online count */}
+      {!expanded && !agents && hasOnline && (
+        <div className="channel-avatar-stack">
+          {Array.from({ length: Math.min(channel.onlineCount, 3) }).map((_, i) => (
+            <div key={i} className="avatar-item online" style={{ opacity: 1 - i * 0.2 }}>
+              &#183;
+            </div>
+          ))}
+          {channel.agentCount > 3 && (
+            <div className="avatar-more">+{channel.agentCount - 3}</div>
+          )}
         </div>
       )}
 
@@ -86,23 +122,39 @@ function ChannelCard({ channel }: { channel: Channel }) {
   );
 }
 
+function ChannelSkeleton() {
+  return (
+    <div className="skeleton-card">
+      <div className="skeleton-header">
+        <div>
+          <div className="skeleton skeleton-line w-60" style={{ height: 14 }} />
+          <div className="skeleton skeleton-line w-40" style={{ height: 10, marginTop: 6 }} />
+        </div>
+      </div>
+      <div className="skeleton-body" style={{ marginTop: 12 }}>
+        <div className="skeleton skeleton-line w-80" />
+      </div>
+    </div>
+  );
+}
+
 export function ChannelView() {
   const channelsFetcher = useCallback(() => fetchChannels(), []);
   const { data: channels, loading, error, refresh } = usePolling<Channel[]>(channelsFetcher);
 
   return (
     <>
-      <div className="header-right" style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 1.5rem' }}>
+      <div className="page-header">
         <span className="live-dot" title="Auto-refreshing every 30s" />
-        <button className="refresh-btn" onClick={refresh}>
-          ↻ Refresh
-        </button>
+        <button className="refresh-btn" onClick={refresh}>Refresh</button>
       </div>
 
       {error && <div className="error-msg">API Error: {error}</div>}
 
       {loading ? (
-        <div className="loading">Loading channel data...</div>
+        <div className="channels-grid">
+          {Array.from({ length: 4 }).map((_, i) => <ChannelSkeleton key={i} />)}
+        </div>
       ) : !channels || channels.length === 0 ? (
         <div className="empty-state">No channel data found</div>
       ) : (
@@ -119,7 +171,7 @@ export function ChannelView() {
       )}
 
       <footer className="footer">
-        <span>Claw Visual v0.1 · Powered by OpenClaw</span>
+        <span>Claw Visual v0.1 &middot; Powered by OpenClaw</span>
       </footer>
     </>
   );
