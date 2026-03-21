@@ -333,16 +333,14 @@ function inferAction(text: string): string {
  */
 export async function fetchAgentsAndActivities(): Promise<{ agents: Agent[]; activities: Activity[] }> {
   const agentIds = await discoverAgentIds();
-  const agents: Agent[] = [];
-  const activities: Activity[] = [];
   const now = Date.now();
 
-  for (const agentId of agentIds) {
-    const meta = await extractAgentMeta(agentId);
-    const session = await getLatestSession(agentId);
-
-    if (!session) {
-      agents.push({
+  // Process all agents in parallel
+  const results = await Promise.all(
+    agentIds.map(async (agentId) => {
+      const meta = await extractAgentMeta(agentId);
+      const session = await getLatestSession(agentId);
+      const agent: Agent = {
         id: agentId,
         name: meta.name,
         role: meta.role,
@@ -353,43 +351,38 @@ export async function fetchAgentsAndActivities(): Promise<{ agents: Agent[]; act
         heartbeatFailures: 0,
         lastActivity: null,
         issueCount: 0,
-      });
-      continue;
-    }
+      };
+      const acts: Activity[] = [];
 
-    const fileMtimeMin = (now - session.mtime) / 60_000;
-    const lastMsgTime = await getLastMessageTime(session.path);
-    const lastMsgMin = lastMsgTime ? (now - lastMsgTime) / 60_000 : fileMtimeMin;
-    const status = resolveStatus(lastMsgMin);
-    const lastSeenTs = lastMsgTime ? Math.max(session.mtime, lastMsgTime) : session.mtime;
-    const recentActs = await getRecentActivities(session.path, 5);
-    const lastAct = recentActs[recentActs.length - 1];
+      if (session) {
+        const fileMtimeMin = (now - session.mtime) / 60_000;
+        const lastMsgTime = await getLastMessageTime(session.path);
+        const lastMsgMin = lastMsgTime ? (now - lastMsgTime) / 60_000 : fileMtimeMin;
+        agent.status = resolveStatus(lastMsgMin);
+        const lastSeenTs = lastMsgTime ? Math.max(session.mtime, lastMsgTime) : session.mtime;
+        agent.lastSeen = new Date(lastSeenTs).toISOString();
+        const recentActs = await getRecentActivities(session.path, 5);
+        const lastAct = recentActs[recentActs.length - 1];
+        agent.lastActivity = lastAct?.text || null;
 
-    agents.push({
-      id: agentId,
-      name: meta.name,
-      role: meta.role,
-      status,
-      lastSeen: new Date(lastSeenTs).toISOString(),
-      avatar: meta.avatar,
-      pendingTasks: 0,
-      heartbeatFailures: 0,
-      lastActivity: lastAct?.text || null,
-      issueCount: 0,
-    });
+        for (const act of recentActs) {
+          acts.push({
+            id: `${agentId}-${act.timestamp}`,
+            agentId,
+            agentName: meta.name,
+            action: inferAction(act.text),
+            detail: act.text,
+            timestamp: new Date(act.timestamp).toISOString(),
+          });
+        }
+      }
 
-    // Build activities from the same data
-    for (const act of recentActs) {
-      activities.push({
-        id: `${agentId}-${act.timestamp}`,
-        agentId,
-        agentName: meta.name,
-        action: inferAction(act.text),
-        detail: act.text,
-        timestamp: new Date(act.timestamp).toISOString(),
-      });
-    }
-  }
+      return { agent, activities: acts };
+    })
+  );
+
+  const agents = results.map(r => r.agent);
+  const activities = results.flatMap(r => r.activities);
 
   // Sort agents: online/busy first, then by lastSeen desc
   const statusOrder: Record<string, number> = { online: 0, busy: 1, away: 2, error: 3, offline: 4 };

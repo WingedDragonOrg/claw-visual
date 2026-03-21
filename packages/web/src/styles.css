@@ -405,7 +405,10 @@ body {
   border-radius: var(--radius);
   padding: 20px;
   transition: all var(--transition);
-  cursor: default;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: block;
 }
 
 .agent-card:hover {

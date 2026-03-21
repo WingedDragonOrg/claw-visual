@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import type { Agent, AgentStatus } from '../types';
 import { timeAgo } from '../utils';
 
@@ -11,7 +12,7 @@ const STATUS_LABELS: Record<AgentStatus, string> = {
 
 export function AgentCard({ agent }: { agent: Agent }) {
   return (
-    <div className={`agent-card`}>
+    <Link to={`/agents/${agent.id}`} className={`agent-card`}>
       <div className="agent-card-header">
         <div className={`agent-avatar ${agent.status}`}>{agent.avatar}</div>
         <div className="agent-info">
@@ -38,6 +39,6 @@ export function AgentCard({ agent }: { agent: Agent }) {
           <span className="last-seen">{timeAgo(agent.lastSeen)}</span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

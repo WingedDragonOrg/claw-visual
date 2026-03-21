@@ -122,7 +122,7 @@ function json(res: http.ServerResponse, data: unknown, status = 200) {
 
 const CORS_ORIGINS = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
-  : ['http://localhost:5173', 'http://localhost:3200'];
+  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3200'];
 const corsMiddleware = cors({ origin: CORS_ORIGINS });
 
 const server = http.createServer((req, res) => {
