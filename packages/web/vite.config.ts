@@ -1,9 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// GitHub Pages deploys to /claw-visual/
+// Override with VITE_BASE env var if deploying elsewhere
+const base = process.env.VITE_BASE || '/claw-visual/';
+
 export default defineConfig({
   plugins: [react()],
-  base: '/',
+  base,
   server: {
     port: 5173,
     proxy: {
