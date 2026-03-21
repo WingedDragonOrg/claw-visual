@@ -81,7 +81,7 @@ async function checkAgentStatusChanges(newAgents: Agent[]) {
 
 let cachedAgents: Agent[] = getMockAgents();
 let cachedActivities: Activity[] = getMockActivities();
-let cachedGitHub: GitHubSummary = { open: 0, byAssignee: {}, issues: [] };
+let cachedGitHub: GitHubSummary = { open: 0, closed: 0, avgCloseTimeHours: 0, byAssignee: {}, issues: [] };
 let cachedChannels: Channel[] = [];
 let useRealData = false;
 let lastPollMs = 0;

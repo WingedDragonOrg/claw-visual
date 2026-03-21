@@ -281,7 +281,187 @@
   color: var(--text-muted);
 }
 
+/* ====== Activity Chart ====== */
+.activity-chart {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 28px;
+}
+
+.activity-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.activity-chart-header .section-title {
+  margin-bottom: 0;
+}
+
+.chart-range-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-xs);
+  padding: 2px;
+}
+
+.chart-tab {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.chart-tab:hover {
+  color: var(--text-secondary);
+}
+
+.chart-tab.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.activity-chart-body {
+  overflow: hidden;
+}
+
+.chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ====== Team Stats ====== */
+.team-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.team-stats-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.team-stats-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
+}
+
+.online-rate-display {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.online-rate-ring {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
+.rate-ring-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.rate-ring-value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.online-rate-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.online-rate-count {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.online-rate-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.issue-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.issue-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.issue-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.issue-stat-open { color: var(--orange); }
+.issue-stat-closed { color: var(--green); }
+.issue-stat-avg { color: var(--blue); }
+
+.issue-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.issue-progress-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--orange-soft);
+  overflow: hidden;
+}
+
+.issue-progress-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+
 /* ====== Responsive ====== */
+@media (max-width: 768px) {
+  .team-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .detail-hero {
     flex-direction: column;
