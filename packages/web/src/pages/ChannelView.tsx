@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { fetchChannels, fetchChannelAgents } from '../api';
 import { usePolling } from '../hooks';
 import { timeAgo } from '../utils';
+import { StaggerIn } from '../components/StaggerIn';
 import type { Channel, Agent } from '../types';
 
 const TYPE_ICONS: Record<Channel['type'], string> = {
@@ -163,8 +164,10 @@ export function ChannelView() {
             Channels <span className="section-count">{channels.length}</span>
           </h2>
           <div className="channels-grid">
-            {channels.map((ch) => (
-              <ChannelCard key={ch.id} channel={ch} />
+            {channels.map((ch, i) => (
+              <StaggerIn key={ch.id} delay={i * 50}>
+                <ChannelCard channel={ch} />
+              </StaggerIn>
             ))}
           </div>
         </section>
