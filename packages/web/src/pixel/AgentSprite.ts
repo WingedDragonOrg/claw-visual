@@ -2,6 +2,7 @@ import { Graphics, Text, TextStyle, Container, Spritesheet, Texture, AnimatedSpr
 import type { Agent } from '../types';
 import type { PixelState } from './types';
 import { STATUS_TO_PIXEL } from './types';
+import { StatusBubble } from './SceneDecorations';
 
 // ──────────────────────────────────────────────
 // Sprite sheet registry
@@ -110,6 +111,7 @@ export class AgentSprite {
   private label: Text;
   private statusLabel: Text;
   private errorOverlay: Graphics | null = null;
+  private bubble: StatusBubble | null = null;
   private currentState: PixelState;
   private agentKey: string;
   private tint: number | null;
@@ -154,6 +156,7 @@ export class AgentSprite {
     this.container.addChild(this.statusLabel);
 
     this.loadSheet();
+    this.syncBubble(); // init bubble based on initial status
   }
 
   private resolveKey(agent: Agent): string {
@@ -205,6 +208,32 @@ export class AgentSprite {
     if (this.errorOverlay) {
       this.errorOverlay.alpha = frame % 40 < 20 ? 0.35 : 0;
     }
+    // Animate bubble float
+    if (this.bubble) {
+      this.bubble.tick(frame / 60);
+    }
+  }
+
+  private syncBubble() {
+    const status = this.agent.status;
+    if (status === 'busy') {
+      if (!this.bubble) {
+        this.bubble = new StatusBubble('💦', 0x2266cc);
+        this.bubble.container.position.set(52, -20);
+        this.container.addChild(this.bubble.container);
+      }
+    } else if (status === 'error') {
+      if (!this.bubble) {
+        this.bubble = new StatusBubble('❗', 0xcc2200);
+        this.bubble.container.position.set(52, -20);
+        this.container.addChild(this.bubble.container);
+      }
+    } else {
+      if (this.bubble) {
+        this.bubble.destroy();
+        this.bubble = null;
+      }
+    }
   }
 
   moveTo(x: number, y: number) {
@@ -239,6 +268,8 @@ export class AgentSprite {
     else if (this.errorOverlay) {
       this.errorOverlay.alpha = 0;
     }
+
+    this.syncBubble();
   }
 
   destroy() {
