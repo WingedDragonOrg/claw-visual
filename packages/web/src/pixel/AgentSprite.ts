@@ -3,41 +3,50 @@ import type { Agent } from '../types';
 import type { PixelState } from './types';
 import { STATUS_TO_PIXEL } from './types';
 
-// Maps agent key → dedicated sprite sheet path in /public/sprites/
+// ──────────────────────────────────────────────
+// Sprite sheet registry
+// ──────────────────────────────────────────────
 const SPRITE_SHEETS: Record<string, string> = {
-  'xiaoai':   '/sprites/agent-xiaoai.png',
-  'xiaochan': '/sprites/agent-xiaochan.png',
-  'xiaokai':  '/sprites/agent-xiaokai.png',
+  xiaoai:   '/sprites/agent-xiaoai.png',
+  xiaochan: '/sprites/agent-xiaochan.png',
+  xiaokai:  '/sprites/agent-xiaokai.png',
 };
 
-// Fallback pool — agents without a dedicated sprite reuse from this list
 const FALLBACK_POOL = Object.values(SPRITE_SHEETS);
 
-/** Stable hash so the same agent always picks the same fallback sprite */
-function stableHash(str: string): number {
+/** Stable hash — same key always picks same fallback */
+function stableHash(s: string): number {
   let h = 0;
-  for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
   return Math.abs(h);
 }
+
+/** Tint palette for fallback agents — distinguishes reused sprites visually */
+const TINTS = [0xffd700, 0x87ceeb, 0xffa07a, 0x98fb98, 0xdda0dd, 0xf0e68c, 0xb0c4de,
+               0xff9999, 0x99ff99, 0x9999ff, 0xffcc99];
 
 function resolveSpritePath(key: string): string {
   return SPRITE_SHEETS[key] ?? FALLBACK_POOL[stableHash(key) % FALLBACK_POOL.length];
 }
 
-/** Frame size in the generated sprite sheet */
+function resolveTint(key: string): number | null {
+  if (key in SPRITE_SHEETS) return null; // dedicated sprite, no tint
+  return TINTS[stableHash(key) % TINTS.length];
+}
+
+// ──────────────────────────────────────────────
+// Sprite sheet frame layout (256×192, 64×64/frame, 4 cols × 3 rows)
+// ──────────────────────────────────────────────
 const FRAME_W = 64;
 const FRAME_H = 64;
-const COLS = 4;
 
-/** Row index per animation state in the sheet */
 const ANIM_ROW: Record<PixelState, number> = {
   idle:  0,
   work:  1,
   sleep: 2,
-  error: 0, // reuse idle row, will apply tint
+  error: 0,  // reuse idle; error tint applied via Graphics overlay
 };
 
-/** Frames per animation row */
 const ANIM_FRAMES: Record<PixelState, number> = {
   idle:  4,
   work:  4,
@@ -45,160 +54,164 @@ const ANIM_FRAMES: Record<PixelState, number> = {
   error: 4,
 };
 
-const STATUS_COLORS: Record<PixelState, number> = {
-  work:  0x22c55e,
-  idle:  0xeab308,
-  sleep: 0x6b7280,
-  error: 0xef4444,
+const ANIM_SPEED: Record<PixelState, number> = {
+  idle:  0.06,
+  work:  0.10,
+  sleep: 0.03,
+  error: 0.06,
 };
 
-/**
- * Agent sprite — uses real AnimatedSprite if a sprite sheet is available,
- * falls back to colored placeholder block otherwise.
- */
+// ──────────────────────────────────────────────
+// Shared Spritesheet cache — avoids re-parsing the same texture
+// ──────────────────────────────────────────────
+const sheetCache = new Map<string, Spritesheet>();
+
+async function getSheet(path: string): Promise<Spritesheet> {
+  if (sheetCache.has(path)) return sheetCache.get(path)!;
+
+  const texture = await Assets.load<Texture>(path);
+
+  const frames: Record<string, { frame: { x: number; y: number; w: number; h: number } }> = {};
+  const animations: Record<string, string[]> = {};
+
+  for (const state of ['idle', 'work', 'sleep', 'error'] as PixelState[]) {
+    const row = ANIM_ROW[state];
+    const count = ANIM_FRAMES[state];
+    const keys: string[] = [];
+    for (let col = 0; col < count; col++) {
+      const key = `${path}:${state}_${col}`;
+      frames[key] = { frame: { x: col * FRAME_W, y: row * FRAME_H, w: FRAME_W, h: FRAME_H } };
+      keys.push(key);
+    }
+    animations[state] = keys;
+  }
+
+  const sheet = new Spritesheet(texture, { frames, animations, meta: { scale: 1 } });
+  await sheet.parse();
+  sheetCache.set(path, sheet);
+  return sheet;
+}
+
+// ──────────────────────────────────────────────
+// AgentSprite
+// ──────────────────────────────────────────────
 export class AgentSprite {
-  container: Container;
+  readonly container: Container;
   private agent: Agent;
   private animated: AnimatedSprite | null = null;
-  private placeholder: Graphics | null = null;
   private label: Text;
-  private animTick = 0;
+  private errorOverlay: Graphics | null = null;
   private currentState: PixelState;
+  private agentKey: string;
+  private tint: number | null;
+  private destroyed = false;
 
   constructor(agent: Agent) {
     this.agent = agent;
-    this.container = new Container();
     this.currentState = STATUS_TO_PIXEL[agent.status];
+    this.container = new Container();
+    this.agentKey = this.resolveKey(agent);
+    this.tint = resolveTint(this.agentKey);
 
-    // Name label (shared for both modes)
+    // Name label
     this.label = new Text({
-      text: agent.name.slice(0, 4),
+      text: agent.name.replace(/同学/g, '').slice(0, 3),
       style: new TextStyle({
         fontFamily: 'monospace',
-        fontSize: 8,
-        fill: 0xffffff,
+        fontSize: 9,
+        fill: 0xdddddd,
         align: 'center',
+        dropShadow: { color: 0x000000, distance: 1, blur: 0, angle: Math.PI / 4, alpha: 0.8 },
       }),
     });
     this.label.anchor.set(0.5, 0);
-    this.label.position.set(32, 68); // below 64px sprite
+    this.label.position.set(32, 66);
     this.container.addChild(this.label);
 
-    // Try to load sprite sheet, fall back to placeholder
-    const agentKey = this.getAgentKey(agent);
-    this.loadSheet(resolveSpritePath(agentKey));
+    this.loadSheet();
   }
 
-  private getAgentKey(agent: Agent): string {
+  private resolveKey(agent: Agent): string {
     const name = agent.name.toLowerCase().replace(/[\s同学]/g, '');
     if (name.includes('爱')) return 'xiaoai';
     if (name.includes('产') || name.includes('chan')) return 'xiaochan';
-    if (name.includes('开') || name.includes('kai')) return 'xiaokai';
-    // Future: 小审 → xiaoshen, 小测 → xiaoce, 小架 → xiaojia
+    if (name.includes('开') || name.includes('kai'))  return 'xiaokai';
     return agent.id.toLowerCase();
   }
 
-  private async loadSheet(path: string) {
+  private async loadSheet() {
     try {
-      const texture = await Assets.load<Texture>(path);
-      const baseTexture = texture.source;
-
-      // Build frames from the sprite sheet
-      const frames: Record<string, { frame: { x: number; y: number; w: number; h: number } }> = {};
-      const animations: Record<string, string[]> = {};
-
-      (['idle', 'work', 'sleep', 'error'] as PixelState[]).forEach((state) => {
-        const row = ANIM_ROW[state];
-        const count = ANIM_FRAMES[state];
-        const keys: string[] = [];
-        for (let col = 0; col < count; col++) {
-          const key = `${state}_${col}`;
-          frames[key] = { frame: { x: col * FRAME_W, y: row * FRAME_H, w: FRAME_W, h: FRAME_H } };
-          keys.push(key);
-        }
-        animations[state] = keys;
-      });
-
-      const sheet = new Spritesheet(texture, {
-        frames,
-        animations,
-        meta: { scale: 1 },
-      });
-      await sheet.parse();
-
-      // Remove placeholder if it was added while loading
-      if (this.placeholder) {
-        this.container.removeChild(this.placeholder);
-        this.placeholder.destroy();
-        this.placeholder = null;
-      }
+      const sheet = await getSheet(resolveSpritePath(this.agentKey));
+      if (this.destroyed) return;
 
       const textures = sheet.animations[this.currentState] ?? sheet.animations['idle'];
       const anim = new AnimatedSprite(textures);
-      anim.animationSpeed = this.currentState === 'sleep' ? 0.04 : 0.08;
+      anim.animationSpeed = ANIM_SPEED[this.currentState];
       anim.loop = true;
+      anim.scale.set(1); // sprites are already 64×64
+
+      // Apply tint for fallback agents
+      if (this.tint !== null) anim.tint = this.tint;
+
+      // Offline: desaturate
+      if (this.agent.status === 'offline') anim.tint = 0x888888;
+
       anim.play();
       this.animated = anim;
       this.container.addChildAt(anim, 0);
 
-      // Reposition label below sprite
-      this.label.position.set(32, 68);
+      // Error overlay (blinking red)
+      if (this.currentState === 'error') this.ensureErrorOverlay();
     } catch (err) {
-      console.warn('[AgentSprite] Failed to load sprite sheet, using placeholder:', err);
-      if (!this.placeholder) this.drawPlaceholder();
+      console.warn('[AgentSprite] sprite load failed:', err);
     }
   }
 
-  private drawPlaceholder() {
-    if (!this.placeholder) {
-      const g = new Graphics();
-      this.container.addChildAt(g, 0);
-      this.placeholder = g;
-      this.label.position.set(16, 36);
-    }
-
-    const state = this.currentState;
-    const color = STATUS_COLORS[state];
-    const pulse = state === 'error' && (this.animTick % 30 < 15);
-
-    this.placeholder.clear();
-    this.placeholder.rect(0, 0, 32, 32).fill({ color: pulse ? 0xff6666 : color });
-    this.placeholder.rect(2, 2, 28, 28).fill({ color: 0x000000, alpha: 0.2 });
-    this.placeholder.rect(12, 10, 8, 8).fill({ color: 0xffffff, alpha: 0.5 });
+  private ensureErrorOverlay() {
+    if (this.errorOverlay) return;
+    const g = new Graphics();
+    g.rect(0, 0, 64, 64).fill({ color: 0xff0000, alpha: 0 });
+    this.container.addChild(g);
+    this.errorOverlay = g;
   }
 
-  tick() {
-    this.animTick++;
-    if (this.placeholder && this.agent.status === 'error' && this.animTick % 15 === 0) {
-      this.drawPlaceholder();
+  tick(frame: number) {
+    // Blink red overlay on error every 20 frames
+    if (this.errorOverlay) {
+      this.errorOverlay.alpha = frame % 40 < 20 ? 0.35 : 0;
     }
   }
 
   moveTo(x: number, y: number) {
-    this.container.position.set(x - 32, y - 32);
+    this.container.position.set(x - 32, y - 32); // center of 64px sprite
   }
 
   setState(agent: Agent) {
     const newState = STATUS_TO_PIXEL[agent.status];
-    const changed = this.currentState !== newState;
+    const changed = this.currentState !== newState || agent.status !== this.agent.status;
     this.agent = agent;
     this.currentState = newState;
 
-    if (changed) {
-      if (this.animated) {
-        // Switch animation on real sprite
-        // (re-parse not needed — reuse existing sheet textures via tag)
-        this.animated.stop();
-        this.animated.gotoAndPlay(0);
-      } else {
-        this.drawPlaceholder();
-      }
+    if (!changed || !this.animated) return;
+
+    // Offline desaturate
+    if (agent.status === 'offline') {
+      this.animated.tint = 0x888888;
+    } else if (this.tint !== null) {
+      this.animated.tint = this.tint;
+    } else {
+      this.animated.tint = 0xffffff;
+    }
+
+    // Error overlay
+    if (newState === 'error') this.ensureErrorOverlay();
+    else if (this.errorOverlay) {
+      this.errorOverlay.alpha = 0;
     }
   }
 
   destroy() {
-    this.animated?.destroy();
-    this.placeholder?.destroy();
+    this.destroyed = true;
     this.container.destroy({ children: true });
   }
 }

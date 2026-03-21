@@ -1,38 +1,82 @@
-import type { OfficeSlot } from './types';
+import type { AgentStatus } from '../types';
 
-const DESK_COLOR = 0x2a2a4a;
-const LOUNGE_COLOR = 0x1a3a2a;
-const EDGE_COLOR = 0x2a1a1a;
+export interface OfficeSlot {
+  x: number;
+  y: number;
+  area: 'desk' | 'lounge' | 'edge';
+}
 
-/**
- * Assigns office positions to agents.
- * Desk area (online/busy), lounge (away), edge (offline/error).
- */
-export function assignSlots(count: number): OfficeSlot[] {
+const W = 1200;
+const H = 500;
+
+/** Zone boundaries */
+const ZONES = {
+  desk:   { x: 40,  y: 40,  w: W * 0.65, h: H * 0.7 },  // working area (top-left)
+  lounge: { x: W * 0.67, y: 40,  w: W * 0.3,  h: H * 0.55 }, // rest area (top-right)
+  edge:   { x: 40,  y: H * 0.72, w: W - 80,   h: H * 0.24 }, // offline/edge row (bottom)
+};
+
+function gridSlots(zone: typeof ZONES[keyof typeof ZONES], count: number, cols: number): OfficeSlot[] {
   const slots: OfficeSlot[] = [];
-  const SCENE_W = 1200;
-  const SCENE_H = 500;
-
-  // Desk area: top 60% of scene, 3 columns
-  const deskCols = 3;
-  const deskRows = Math.ceil(count / deskCols);
+  const cellW = zone.w / Math.max(cols, 1);
+  const rows = Math.ceil(count / cols);
+  const cellH = zone.h / Math.max(rows, 1);
   for (let i = 0; i < count; i++) {
-    const col = i % deskCols;
-    const row = Math.floor(i / deskCols);
+    const col = i % cols;
+    const row = Math.floor(i / cols);
     slots.push({
-      x: 120 + col * (SCENE_W / deskCols - 40),
-      y: 80 + row * ((SCENE_H * 0.6) / Math.max(deskRows, 1)),
+      x: zone.x + col * cellW + cellW / 2,
+      y: zone.y + row * cellH + cellH / 2,
       area: 'desk',
     });
   }
   return slots;
 }
 
-/** Background color for each area zone */
-export function areaColor(area: OfficeSlot['area']): number {
-  switch (area) {
-    case 'desk':   return DESK_COLOR;
-    case 'lounge': return LOUNGE_COLOR;
-    case 'edge':   return EDGE_COLOR;
-  }
+const STATUS_ZONE: Record<AgentStatus, 'desk' | 'lounge' | 'edge'> = {
+  online:  'desk',
+  busy:    'desk',
+  away:    'lounge',
+  offline: 'edge',
+  error:   'edge',
+};
+
+export interface ZonedAgentSlot extends OfficeSlot {
+  agentIndex: number;
 }
+
+/**
+ * Assigns office slots by agent status.
+ * Returns a map of agentIndex → slot.
+ */
+export function assignSlotsByStatus(
+  statuses: AgentStatus[]
+): ZonedAgentSlot[] {
+  const buckets: { zone: 'desk' | 'lounge' | 'edge'; agentIndex: number }[] = statuses.map(
+    (s, i) => ({ zone: STATUS_ZONE[s], agentIndex: i })
+  );
+
+  const deskAgents  = buckets.filter((b) => b.zone === 'desk');
+  const loungeAgents = buckets.filter((b) => b.zone === 'lounge');
+  const edgeAgents  = buckets.filter((b) => b.zone === 'edge');
+
+  const deskSlots   = gridSlots(ZONES.desk,   deskAgents.length,   4);
+  const loungeSlots = gridSlots(ZONES.lounge,  loungeAgents.length, 2);
+  const edgeSlots   = gridSlots(ZONES.edge,    edgeAgents.length,   6);
+
+  const result: ZonedAgentSlot[] = new Array(statuses.length);
+
+  deskAgents.forEach((b, i) => {
+    result[b.agentIndex] = { ...deskSlots[i], area: 'desk', agentIndex: b.agentIndex };
+  });
+  loungeAgents.forEach((b, i) => {
+    result[b.agentIndex] = { ...loungeSlots[i], area: 'lounge', agentIndex: b.agentIndex };
+  });
+  edgeAgents.forEach((b, i) => {
+    result[b.agentIndex] = { ...edgeSlots[i], area: 'edge', agentIndex: b.agentIndex };
+  });
+
+  return result;
+}
+
+export { W as SCENE_W, H as SCENE_H, ZONES };
