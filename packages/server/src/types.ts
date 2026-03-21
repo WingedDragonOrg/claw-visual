@@ -28,10 +28,14 @@ export interface GitHubIssue {
   state: string;
   assignees: { login: string }[];
   labels: { name: string }[];
+  createdAt?: string;
+  closedAt?: string | null;
 }
 
 export interface GitHubSummary {
   open: number;
+  closed: number;
+  avgCloseTimeHours: number;
   byAssignee: Record<string, number>;
   issues: GitHubIssue[];
 }

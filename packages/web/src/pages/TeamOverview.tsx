@@ -1,10 +1,11 @@
 import { useState, useCallback, useMemo } from 'react';
-import { fetchAgents, fetchDashboard } from '../api';
+import { fetchAgents, fetchDashboard, fetchIssues } from '../api';
 import { usePolling } from '../hooks';
 import { AgentCard } from '../components/AgentCard';
 import { ActivityFeed } from '../components/ActivityFeed';
 import { StatsBar } from '../components/StatsBar';
-import type { Agent, AgentStatus, DashboardData } from '../types';
+import { TeamStats } from '../components/TeamStats';
+import type { Agent, AgentStatus, DashboardData, GitHubSummary } from '../types';
 
 type FilterStatus = 'all' | AgentStatus;
 
@@ -50,9 +51,11 @@ export function TeamOverview() {
 
   const agentsFetcher = useCallback(() => fetchAgents(), []);
   const dashFetcher = useCallback(() => fetchDashboard(), []);
+  const issuesFetcher = useCallback(() => fetchIssues(), []);
 
   const { data: agents, loading: agentsLoading, error: agentsError, refresh } = usePolling<Agent[]>(agentsFetcher);
   const { data: dashboard, loading: dashLoading } = usePolling<DashboardData>(dashFetcher);
+  const { data: issues } = usePolling<GitHubSummary>(issuesFetcher);
 
   const loading = agentsLoading && dashLoading;
 
@@ -90,6 +93,8 @@ export function TeamOverview() {
       ) : (
         <>
           {dashboard && <StatsBar data={dashboard} />}
+
+          {dashboard && <TeamStats dashboard={dashboard} issues={issues} />}
 
           <div className="status-filter">
             {FILTERS.map((f) => (
