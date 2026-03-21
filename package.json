@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "bun run --filter '*' dev",
     "dev:server": "bun run --filter @claw-visual/server dev",
-    "dev:web": "bun run --filter @claw-visual/web dev"
+    "dev:web": "bun run --filter @claw-visual/web dev",
+    "bot:dev": "bun run --filter @claw-visual/discord-bot dev",
+    "bot:start": "bun run --filter @claw-visual/discord-bot start"
   }
 }
