@@ -26,6 +26,7 @@ function Legend() {
 }
 
 export function PixelOffice() {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pixiRef = useRef<PixiApp | null>(null);
   const pendingAgentsRef = useRef<Agent[] | null>(null);
@@ -53,6 +54,17 @@ export function PixelOffice() {
       });
 
     return () => pixi.destroy();
+  }, []);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width && pixiRef.current) pixiRef.current.resize(width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   useEffect(() => {
@@ -90,7 +102,7 @@ export function PixelOffice() {
       )}
 
       {!initError && (
-        <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
+        <div ref={containerRef} style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
           <canvas
             ref={canvasRef}
             style={{ display: 'block', imageRendering: 'pixelated' }}
