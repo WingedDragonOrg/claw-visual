@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { TeamProvider } from './components/TeamContext';
+import { ThresholdsProvider } from './context/ThresholdsContext';
 import { TeamOverview } from './pages/TeamOverview';
 import { ChannelView } from './pages/ChannelView';
 import { AgentDetail } from './pages/AgentDetail';
@@ -11,6 +12,7 @@ export function App() {
   return (
     <ErrorBoundary>
       <TeamProvider>
+        <ThresholdsProvider>
         <BrowserRouter basename={import.meta.env.BASE_URL}>
           <Routes>
             <Route element={<Layout />}>
@@ -21,6 +23,7 @@ export function App() {
             </Route>
           </Routes>
         </BrowserRouter>
+        </ThresholdsProvider>
       </TeamProvider>
     </ErrorBoundary>
   );
