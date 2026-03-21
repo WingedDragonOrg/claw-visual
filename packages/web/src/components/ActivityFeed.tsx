@@ -1,4 +1,5 @@
 import type { Activity } from '../types';
+import { timeAgo } from '../utils';
 
 const ACTION_COLORS: Record<string, string> = {
   '代码审查': 'action-review',
@@ -8,16 +9,6 @@ const ACTION_COLORS: Record<string, string> = {
   '心跳检测': 'action-heartbeat',
   '工作': 'action-work',
 };
-
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const min = Math.floor(diff / 60_000);
-  if (min < 1) return '刚刚';
-  if (min < 60) return `${min}m`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h`;
-  return `${Math.floor(hr / 24)}d`;
-}
 
 function formatTime(iso: string): string {
   const d = new Date(iso);

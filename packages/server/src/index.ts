@@ -48,7 +48,10 @@ function json(res: http.ServerResponse, data: unknown, status = 200) {
   res.end(JSON.stringify(data));
 }
 
-const corsMiddleware = cors({ origin: true });
+const CORS_ORIGINS = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
+  : ['http://localhost:5173', 'http://localhost:3200'];
+const corsMiddleware = cors({ origin: CORS_ORIGINS });
 
 const server = http.createServer((req, res) => {
   corsMiddleware(req as any, res as any, () => {

@@ -143,7 +143,7 @@ body {
 
 .stats-bar {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
   gap: 12px;
   margin-bottom: 8px;
 }
@@ -485,7 +485,7 @@ body {
 /* Responsive */
 @media (max-width: 768px) {
   .stats-bar {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
   }
   .agents-grid {
     grid-template-columns: 1fr;
@@ -496,7 +496,7 @@ body {
   .app { padding: 16px 12px; }
   .header { flex-direction: column; align-items: flex-start; gap: 12px; }
   .agents-grid { grid-template-columns: 1fr; }
-  .stats-bar { grid-template-columns: repeat(3, 1fr); }
+  .stats-bar { grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); }
   .activity-time { display: none; }
   .activity-detail {
     white-space: normal;
@@ -505,4 +505,8 @@ body {
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; }
 }

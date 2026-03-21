@@ -1,20 +1,7 @@
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
+import type { GitHubIssue, GitHubSummary } from './types.js';
 
 const DEFAULT_REPO = process.env.GITHUB_REPO || 'WingedDragonOrg/remote-shell';
-
-interface GitHubIssue {
-  number: number;
-  title: string;
-  state: string;
-  assignees: { login: string }[];
-  labels: { name: string }[];
-}
-
-interface GitHubSummary {
-  open: number;
-  byAssignee: Record<string, number>;
-  issues: GitHubIssue[];
-}
 
 let cachedSummary: GitHubSummary | null = null;
 let lastFetch = 0;
@@ -22,10 +9,13 @@ const CACHE_MS = 60_000; // 1 minute cache
 
 function fetchIssues(): GitHubSummary {
   try {
-    const output = execSync(
-      `gh issue list --repo ${DEFAULT_REPO} --state open --json number,title,assignees,labels,state --limit 50`,
-      { encoding: 'utf-8', timeout: 10_000 }
-    );
+    const output = execFileSync('gh', [
+      'issue', 'list',
+      '--repo', DEFAULT_REPO,
+      '--state', 'open',
+      '--json', 'number,title,assignees,labels,state',
+      '--limit', '50'
+    ], { encoding: 'utf-8', timeout: 10_000 });
     const issues: GitHubIssue[] = JSON.parse(output);
     const byAssignee: Record<string, number> = {};
 

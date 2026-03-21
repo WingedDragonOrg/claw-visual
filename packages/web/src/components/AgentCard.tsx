@@ -1,4 +1,5 @@
 import type { Agent, AgentStatus } from '../types';
+import { timeAgo } from '../utils';
 
 const STATUS_LABELS: Record<AgentStatus, string> = {
   online: '在线',
@@ -7,16 +8,6 @@ const STATUS_LABELS: Record<AgentStatus, string> = {
   error: '异常',
   offline: '离线',
 };
-
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const min = Math.floor(diff / 60_000);
-  if (min < 1) return '刚刚';
-  if (min < 60) return `${min}m`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h`;
-  return `${Math.floor(hr / 24)}d`;
-}
 
 export function AgentCard({ agent }: { agent: Agent }) {
   return (
