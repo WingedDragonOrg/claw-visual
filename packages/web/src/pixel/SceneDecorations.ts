@@ -23,6 +23,8 @@ export class SceneDecorations {
   private monitors: MonitorEntry[] = [];
   private clouds: Cloud[] = [];
   private plants: Plant[] = [];
+  private chairGraphics: Graphics | null = null;
+  private chairStates: Map<string, boolean> = new Map(); // agentId -> online
 
   constructor() {
     this.container = new Container();
@@ -35,46 +37,94 @@ export class SceneDecorations {
   private drawOfficeFurniture() {
     const g = new Graphics();
 
-    // ── Floor tiles (warm wood checkerboard) ─────────────────────────────
+    // ── Floor tiles (warm wood checkerboard, softer creamier tones) ───────
     for (let x = 0; x < 1200; x += 40) {
       for (let y = 0; y < 500; y += 40) {
-        const shade = ((x / 40 + y / 40) % 2 === 0) ? 0xd4956a : 0xc4855a;
+        // Warmer cream/beige instead of orange
+        const shade = ((x / 40 + y / 40) % 2 === 0) ? 0xe8d4b8 : 0xd8c4a8;
         g.rect(x, y, 40, 40).fill({ color: shade });
+      }
+    }
+
+    // ── Top wall (taller, 40px with brick pattern) ──────────────────────────
+    g.rect(0, 0, 1200, 40).fill({ color: 0x3a3a50 });
+    // Brick pattern lines
+    for (let bx = 0; bx < 1200; bx += 60) {
+      g.rect(bx, 0, 1, 40).fill({ color: 0x2a2a40 });
+    }
+    for (let by = 0; by < 40; by += 14) {
+      g.rect(0, by, 1200, 1).fill({ color: 0x2a2a40 });
+      // Offset every other row
+      if ((by / 14) % 2 === 1) {
+        g.rect(30, by, 1, 14).fill({ color: 0x2a2a40 });
+        g.rect(90, by, 1, 14).fill({ color: 0x4a4a60 }); // highlight
       }
     }
 
     // ── Wall borders ────────────────────────────────────────────────────
     // Left wall
-    g.rect(0, 18, 22, 500).fill({ color: 0xe8d5c0 });
-    g.rect(0, 18, 4, 500).fill({ color: 0xc8b5a0 }); // dark corner shadow
+    g.rect(0, 40, 22, 460).fill({ color: 0xe8d5c0 });
+    g.rect(0, 40, 4, 460).fill({ color: 0xc8b5a0 }); // dark corner shadow
     // Bottom wall (baseboard)
     g.rect(0, 480, 1200, 20).fill({ color: 0xe0c8b0 });
     g.rect(0, 478, 1200, 3).fill({ color: 0xc0a890 }); // baseboard highlight
 
-    // ── Ceiling light glows ─────────────────────────────────────────────
-    const glowCenters = [
-      { x: 250, y: 80 }, { x: 550, y: 80 },
-      { x: 250, y: 250 }, { x: 550, y: 250 },
+    // ── Pendant ceiling lights (lampshade + bulb, focused glow) ──────────────
+    const lightCenters = [
+      { x: 250, y: 120 }, { x: 550, y: 120 },
+      { x: 250, y: 300 }, { x: 550, y: 300 },
     ];
-    for (const gc of glowCenters) {
-      g.ellipse(gc.x, gc.y, 90, 50).fill({ color: 0xffeeaa, alpha: 0.06 });
-      g.ellipse(gc.x, gc.y, 20, 10).fill({ color: 0xffdd88, alpha: 0.08 });
+    for (const lc of lightCenters) {
+      // Chain
+      g.rect(lc.x - 1, 0, 2, lc.y - 30).fill({ color: 0x666677 });
+      // Lampshade (trapezoid-ish)
+      g.moveTo(lc.x - 16, lc.y - 30);
+      g.lineTo(lc.x + 16, lc.y - 30);
+      g.lineTo(lc.x + 12, lc.y - 20);
+      g.lineTo(lc.x - 12, lc.y - 20);
+      g.closePath().fill({ color: 0xccaa66 });
+      // Bulb glow (warm yellow)
+      g.ellipse(lc.x, lc.y - 15, 8, 6).fill({ color: 0xffee88 });
+      // Focused downward cone glow
+      g.moveTo(lc.x - 10, lc.y - 10);
+      g.lineTo(lc.x + 10, lc.y - 10);
+      g.lineTo(lc.x + 50, lc.y + 80);
+      g.lineTo(lc.x - 50, lc.y + 80);
+      g.closePath().fill({ color: 0xffeeaa, alpha: 0.07 });
+      // Inner hot spot
+      g.ellipse(lc.x, lc.y - 5, 6, 4).fill({ color: 0xffffcc, alpha: 0.5 });
     }
 
-    // ── Desks ─────────────────────────────────────────────────────────────
+    // ── Desks (isometric style with depth) ────────────────────────────────────
     for (const slot of DESK_SLOTS) {
       const dx = slot.x - 60, dy = slot.y - 20;
-      // Desk surface
-      g.rect(dx, dy, 120, 14).fill({ color: 0x8b5e3c });
-      g.rect(dx, dy, 120, 3).fill({ color: 0xa0724a }); // highlight edge
-      // Desk legs
-      g.rect(dx + 4, dy + 14, 6, 16).fill({ color: 0x6b4a2a });
-      g.rect(dx + 110, dy + 14, 6, 16).fill({ color: 0x6b4a2a });
-      // Chair
-      g.rect(dx + 36, dy + 30, 48, 6).fill({ color: 0x3a3a5c }); // seat
-      g.rect(dx + 44, dy + 36, 32, 14).fill({ color: 0x2e2e4a }); // base
-      g.rect(dx + 44, dy + 14, 32, 18).fill({ color: 0x3a3a5c }); // back
+      // Desk top (parallelogram for 45° isometric feel)
+      g.moveTo(dx, dy + 4);
+      g.lineTo(dx + 120, dy);
+      g.lineTo(dx + 120, dy + 14);
+      g.lineTo(dx, dy + 18);
+      g.closePath().fill({ color: 0x8b5e3c });
+      // Desk top highlight edge
+      g.moveTo(dx, dy + 4);
+      g.lineTo(dx + 120, dy);
+      g.lineTo(dx + 120, dy + 3);
+      g.lineTo(dx, dy + 7);
+      g.closePath().fill({ color: 0xa0724a });
+      // Desk front face (depth)
+      g.moveTo(dx, dy + 18);
+      g.lineTo(dx + 120, dy + 14);
+      g.lineTo(dx + 120, dy + 30);
+      g.lineTo(dx, dy + 34);
+      g.closePath().fill({ color: 0x6b4a2a });
+      // Desk legs (visible from front)
+      g.rect(dx + 4, dy + 28, 6, 16).fill({ color: 0x5a3a1a });
+      g.rect(dx + 110, dy + 28, 6, 16).fill({ color: 0x5a3a1a });
     }
+
+    // ── Chairs (drawn after desks, with online/offline state via separate method) ──
+    // Chair positions stored for dynamic rendering (pushed aside for offline)
+    this.chairGraphics = new Graphics();
+    this.drawChairs(this.chairGraphics, this.chairStates);
 
     // ── Lounge area ───────────────────────────────────────────────────────
     const lx = LOUNGE_X, ly = LOUNGE_Y;
@@ -117,22 +167,34 @@ export class SceneDecorations {
     g.rect(wx.x - 8,  wx.y - 50, 16, 12).fill({ color: 0x88aacc }); // bottle
     g.rect(wx.x - 10, wx.y - 10, 8, 6).fill({ color: 0x4477aa });   // tap
 
-    // ── Top wall ─────────────────────────────────────────────────────────
-    g.rect(0, 0, 1200, 18).fill({ color: 0x252540 });
-
-    // ── Windows on top wall ─────────────────────────────────────────────
+    // ── Windows on top wall with curtains ─────────────────────────────────────
     const hour = new Date().getHours();
     const isDaytime = hour >= 6 && hour < 20;
     const skyColor = isDaytime ? 0x87ceeb : 0x1a1a3a;
     for (const winX of [160, 360, 560]) {
+      // Curtains (pixel style, both sides)
+      // Left curtain
+      g.moveTo(winX - 22, 0);
+      g.lineTo(winX - 8, 0);
+      g.lineTo(winX - 4, 40);
+      g.lineTo(winX - 16, 40);
+      g.closePath().fill({ color: 0x8b4a6b }); // dusty rose
+      // Right curtain
+      g.moveTo(winX + 78, 0);
+      g.lineTo(winX + 92, 0);
+      g.lineTo(winX + 96, 40);
+      g.lineTo(winX + 84, 40);
+      g.closePath().fill({ color: 0x8b4a6b });
+      // Curtain rod
+      g.rect(winX - 20, 0, 110, 3).fill({ color: 0x6b5a4a });
       // Outer frame (slightly darker border)
-      g.rect(winX - 1, 0, 82, 17).fill({ color: 0xa09080 });
+      g.rect(winX - 1, 5, 82, 32).fill({ color: 0xa09080 });
       // Sky fill
-      g.rect(winX, 1, 80, 15).fill({ color: skyColor });
+      g.rect(winX, 6, 80, 30).fill({ color: skyColor });
       // Vertical mullion
-      g.rect(winX + 39, 1, 2, 13).fill({ color: 0xa09080 });
+      g.rect(winX + 39, 6, 2, 26).fill({ color: 0xa09080 });
       // Horizontal mullion
-      g.rect(winX, 8, 80, 2).fill({ color: 0xa09080 });
+      g.rect(winX, 18, 80, 2).fill({ color: 0xa09080 });
     }
 
     // ── Whiteboard (top-left, near bookshelf) ─────────────────────────────
@@ -201,6 +263,11 @@ export class SceneDecorations {
 
     this.container.addChildAt(g, 0);
 
+    // Add chairs layer on top of floor/desks but below agents
+    if (this.chairGraphics) {
+      this.container.addChild(this.chairGraphics);
+    }
+
     // ── Whiteboard label (added after Graphics so it sits on top) ────────
     const boardLabel = new Text({
       text: 'BOARD',
@@ -211,7 +278,40 @@ export class SceneDecorations {
     this.container.addChild(boardLabel);
   }
 
-  // ─── Monitors (dynamic — per agent) ──────────────────────────────────────
+  private drawChairs(g: Graphics, chairStates: Map<string, boolean>) {
+    // Draw chairs based on online/offline state
+    // Offline: chair pushed aside (rotated and moved right)
+    let idx = 0;
+    for (const slot of DESK_SLOTS) {
+      const dx = slot.x - 60, dy = slot.y - 20;
+      const online = chairStates.get(`slot_${idx}`) ?? true; // default online
+      idx++;
+
+      if (online) {
+        // Chair in seated position (in front of desk)
+        g.rect(dx + 36, dy + 30, 48, 6).fill({ color: 0x3a3a5c }); // seat
+        g.rect(dx + 44, dy + 36, 32, 14).fill({ color: 0x2e2e4a }); // base
+        g.rect(dx + 44, dy + 14, 32, 18).fill({ color: 0x3a3a5c }); // back
+      } else {
+        // Chair pushed aside (to the right of desk, slightly rotated feel via offset)
+        g.rect(dx + 130, dy + 32, 48, 6).fill({ color: 0x3a3a5c }); // seat
+        g.rect(dx + 138, dy + 38, 32, 14).fill({ color: 0x2e2e4a }); // base
+        g.rect(dx + 138, dy + 16, 32, 18).fill({ color: 0x3a3a5c }); // back
+      }
+    }
+  }
+
+  updateChairStates(slots: { x: number; y: number; agentId: string; online: boolean }[]) {
+    // Update chair states map
+    slots.forEach((slot, i) => {
+      this.chairStates.set(`slot_${i}`, slot.online);
+    });
+    // Redraw chairs
+    if (this.chairGraphics) {
+      this.chairGraphics.clear();
+      this.drawChairs(this.chairGraphics, this.chairStates);
+    }
+  }
   setMonitorSlots(slots: { x: number; y: number; agentId: string; online: boolean }[]) {
     for (const m of this.monitors) m.g.destroy();
     this.monitors = [];
@@ -223,6 +323,9 @@ export class SceneDecorations {
       this.container.addChild(g);
       this.monitors.push({ g, agentId: slot.agentId, online: slot.online });
     }
+
+    // Update chair states
+    this.updateChairStates(slots);
   }
 
   private drawMonitor(g: Graphics, online: boolean) {
