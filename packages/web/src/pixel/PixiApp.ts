@@ -1,59 +1,91 @@
-import { Application, Graphics } from 'pixi.js';
+import { Application, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Agent } from '../types';
 import { AgentSprite } from './AgentSprite';
-import { assignSlots } from './SceneLayout';
+import { assignSlotsByStatus, SCENE_W, SCENE_H, ZONES } from './SceneLayout';
 
-/**
- * Manages the PixiJS Application lifecycle.
- * Created once per PixelOffice mount, destroyed on unmount.
- */
 export class PixiApp {
   private app: Application | null = null;
   private sprites: Map<string, AgentSprite> = new Map();
   private initialized = false;
+  private frame = 0;
 
   async init(canvas: HTMLCanvasElement) {
     const app = new Application();
     await app.init({
       canvas,
-      width: canvas.clientWidth || 1200,
-      height: 500,
-      background: 0x0b0b12,
-      antialias: false, // pixel-perfect rendering
-      resolution: window.devicePixelRatio || 1,
-      autoDensity: true,
+      width: SCENE_W,
+      height: SCENE_H,
+      background: 0x0d0d1a,
+      antialias: false,
+      resolution: 1,
+      autoDensity: false,
     });
     this.app = app;
     this.initialized = true;
 
     this.drawBackground();
 
-    // Ticker for animations
     app.ticker.add(() => {
-      for (const sprite of this.sprites.values()) {
-        sprite.tick();
-      }
+      this.frame++;
+      for (const sprite of this.sprites.values()) sprite.tick(this.frame);
     });
   }
 
   private drawBackground() {
     if (!this.app) return;
     const g = new Graphics();
-    const W = this.app.screen.width;
-    const H = this.app.screen.height;
+    const stage = this.app.stage;
 
-    // Pixel-art floor grid
-    for (let x = 0; x < W; x += 32) {
-      for (let y = 0; y < H; y += 32) {
-        const shade = ((x / 32 + y / 32) % 2 === 0) ? 0x111119 : 0x0f0f16;
+    // ── Floor grid ──────────────────────────────────
+    for (let x = 0; x < SCENE_W; x += 32) {
+      for (let y = 0; y < SCENE_H; y += 32) {
+        const shade = ((x / 32 + y / 32) % 2 === 0) ? 0x111120 : 0x0d0d1a;
         g.rect(x, y, 32, 32).fill({ color: shade });
       }
     }
 
-    // Desk zone label
-    g.rect(20, 20, 140, 18).fill({ color: 0x1a1a2e });
+    // ── Desk zone ────────────────────────────────────
+    const dz = ZONES.desk;
+    g.rect(dz.x, dz.y, dz.w, dz.h).fill({ color: 0x151528, alpha: 0.7 });
+    g.rect(dz.x, dz.y, dz.w, 2).fill({ color: 0x4040aa });     // top border
+    g.rect(dz.x, dz.y, 2, dz.h).fill({ color: 0x4040aa });     // left border
 
-    this.app.stage.addChild(g);
+    // Desk rows decoration (subtle)
+    for (let row = 1; row < 3; row++) {
+      const ry = dz.y + (dz.h / 3) * row;
+      g.rect(dz.x + 4, ry, dz.w - 8, 1).fill({ color: 0x2a2a55, alpha: 0.5 });
+    }
+
+    // ── Lounge zone ──────────────────────────────────
+    const lz = ZONES.lounge;
+    g.rect(lz.x, lz.y, lz.w, lz.h).fill({ color: 0x0f2018, alpha: 0.7 });
+    g.rect(lz.x, lz.y, lz.w, 2).fill({ color: 0x20aa55 });
+    g.rect(lz.x, lz.y, 2, lz.h).fill({ color: 0x20aa55 });
+
+    // Sofa/plant decoration
+    g.roundRect(lz.x + 12, lz.y + lz.h - 30, 60, 20, 4).fill({ color: 0x1a4a2a });
+    g.roundRect(lz.x + 80, lz.y + lz.h - 30, 60, 20, 4).fill({ color: 0x1a4a2a });
+    // Plant pot
+    g.rect(lz.x + lz.w - 30, lz.y + lz.h - 36, 16, 28).fill({ color: 0x8b4513 });
+    g.ellipse(lz.x + lz.w - 22, lz.y + lz.h - 36, 20, 14).fill({ color: 0x228b22 });
+
+    // ── Edge zone (offline row) ───────────────────────
+    const ez = ZONES.edge;
+    g.rect(ez.x, ez.y, ez.w, ez.h).fill({ color: 0x1a0d0d, alpha: 0.5 });
+    g.rect(ez.x, ez.y, ez.w, 1).fill({ color: 0x553333 });
+
+    stage.addChild(g);
+
+    // ── Zone labels ──────────────────────────────────
+    const labelStyle = new TextStyle({ fontFamily: 'monospace', fontSize: 9, fill: 0x555577 });
+    const mkLabel = (text: string, x: number, y: number) => {
+      const t = new Text({ text, style: labelStyle });
+      t.position.set(x, y);
+      stage.addChild(t);
+    };
+    mkLabel('[ WORK ZONE ]', dz.x + 4, dz.y + 4);
+    mkLabel('[ LOUNGE ]', lz.x + 4, lz.y + 4);
+    mkLabel('[ OFFLINE ]', ez.x + 4, ez.y + 4);
   }
 
   isReady(): boolean {
@@ -62,12 +94,14 @@ export class PixiApp {
 
   updateAgents(agents: Agent[]) {
     if (!this.app || !this.initialized) return;
-
-    const slots = assignSlots(agents.length);
-
     const stage = this.app.stage;
+
+    const statuses = agents.map((a) => a.status);
+    const slots = assignSlotsByStatus(statuses);
+
     agents.forEach((agent, i) => {
-      const slot = slots[i] || { x: 60, y: 60, area: 'desk' as const };
+      const slot = slots[i];
+      if (!slot) return;
 
       if (this.sprites.has(agent.id)) {
         const sprite = this.sprites.get(agent.id)!;
@@ -81,15 +115,13 @@ export class PixiApp {
       }
     });
 
-    // Remove sprites for agents no longer in list
+    // Remove stale sprites
     const currentIds = new Set(agents.map((a) => a.id));
-    for (const [id, sprite] of this.sprites) {
-      if (!currentIds.has(id)) {
-        sprite.destroy();
-      }
-    }
     for (const id of [...this.sprites.keys()]) {
-      if (!currentIds.has(id)) this.sprites.delete(id);
+      if (!currentIds.has(id)) {
+        this.sprites.get(id)!.destroy();
+        this.sprites.delete(id);
+      }
     }
   }
 
