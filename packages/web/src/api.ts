@@ -1,10 +1,19 @@
 import type { Agent, Activity, Channel, DashboardData, GitHubSummary } from './types';
 
-const API_BASE = import.meta.env.VITE_API_BASE || '';
-const BASE = `${API_BASE}/api`;
+let _apiBase: string | null = null;
+
+export function setApiBase(base: string) {
+  _apiBase = base;
+}
+
+function getBase(): string {
+  if (_apiBase) return _apiBase;
+  const envBase = import.meta.env.VITE_API_BASE || '';
+  return `${envBase}/api`;
+}
 
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`);
+  const res = await fetch(`${getBase()}${path}`);
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     throw new Error(`API ${res.status}: ${body || res.statusText}`);

@@ -111,6 +111,105 @@
   animation: pulse 2s ease-in-out infinite;
 }
 
+/* ====== Team Switcher ====== */
+.team-switcher {
+  position: relative;
+}
+
+.team-switcher-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.team-switcher-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+
+.team-switcher-empty {
+  color: var(--accent);
+  border-color: rgba(99,102,241,0.3);
+}
+
+.team-switcher-empty:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.team-switcher-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-switcher-arrow {
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+.team-switcher-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background: var(--bg-card-solid);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  z-index: 200;
+  overflow: hidden;
+}
+
+.team-switcher-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition);
+  text-align: left;
+}
+
+.team-switcher-option:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.team-switcher-option.active {
+  color: var(--accent);
+}
+
+.team-switcher-option-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-switcher-check {
+  font-size: 12px;
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
 /* ====== Header Row (refresh, etc) ====== */
 .page-header {
   display: flex;
