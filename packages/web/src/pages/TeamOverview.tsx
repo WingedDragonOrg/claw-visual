@@ -6,6 +6,7 @@ import { ActivityFeed } from '../components/ActivityFeed';
 import { StatsBar } from '../components/StatsBar';
 import { TeamStats } from '../components/TeamStats';
 import type { Agent, AgentStatus, DashboardData, GitHubSummary } from '../types';
+import { StaggerIn } from '../components/StaggerIn';
 
 type FilterStatus = 'all' | AgentStatus;
 
@@ -116,8 +117,10 @@ export function TeamOverview() {
               Agents <span className="section-count">{filteredAgents.length}</span>
             </h2>
             <div className="agents-grid">
-              {filteredAgents.map((agent) => (
-                <AgentCard key={agent.id} agent={agent} />
+              {filteredAgents.map((agent, i) => (
+                <StaggerIn key={agent.id} delay={i * 50}>
+                  <AgentCard agent={agent} />
+                </StaggerIn>
               ))}
               {filteredAgents.length === 0 && (
                 <div className="empty-state">No agents match this filter</div>
