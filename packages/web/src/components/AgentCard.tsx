@@ -1,15 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useRef, useCallback } from 'react';
-import type { Agent, AgentStatus } from '../types';
+import type { Agent } from '../types';
 import { timeAgo } from '../utils';
-
-const STATUS_LABELS: Record<AgentStatus, string> = {
-  online: '在线',
-  away: '离开',
-  busy: '忙碌中',
-  error: '异常',
-  offline: '离线',
-};
+import { StatusBadge } from './StatusBadge';
 
 /**
  * 3D tilt effect hook.
@@ -77,10 +70,7 @@ export function AgentCard({ agent }: { agent: Agent }) {
         </div>
       )}
       <div className="agent-card-body">
-        <span className={`status-badge ${agent.status}`}>
-          <span className="dot" />
-          {STATUS_LABELS[agent.status]}
-        </span>
+        <StatusBadge status={agent.status} />
         <div className="agent-card-meta">
           {agent.issueCount !== undefined && agent.issueCount > 0 && (
             <span className="issue-count" title={`${agent.issueCount} open issues`}>

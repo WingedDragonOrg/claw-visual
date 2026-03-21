@@ -29,6 +29,16 @@ export const fetchChannels = () => get<Channel[]>('/channels');
 export const fetchChannelAgents = (channelId: string) =>
   get<Agent[]>(`/channels/${encodeURIComponent(channelId)}/agents`);
 
+export interface ThresholdData {
+  isNightMode: boolean;
+  normal: { onlineMinutes: number; busyMinutes: number; awayMinutes: number };
+  night: { onlineMinutes: number; busyMinutes: number; awayMinutes: number };
+  current: { onlineMinutes: number; busyMinutes: number; awayMinutes: number };
+  heartbeatFailuresForError: number;
+}
+
+export const fetchThresholds = () => get<ThresholdData>('/config/thresholds');
+
 export interface HealthData {
   status: string;
   dataSource: string;
