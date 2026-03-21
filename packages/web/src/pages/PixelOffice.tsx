@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { fetchAgents } from '../api';
 import { usePolling } from '../hooks';
 import { PixiApp } from '../pixel/PixiApp';
@@ -40,6 +40,8 @@ function Legend() {
 export function PixelOffice() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pixiRef = useRef<PixiApp | null>(null);
+  const pendingAgentsRef = useRef<Agent[] | null>(null); // #27: buffer data that arrived before init
+  const [initError, setInitError] = useState<string | null>(null); // #26: surface init failure
 
   const agentsFetcher = useCallback(() => fetchAgents(), []);
   const { data: agents, loading, error } = usePolling<Agent[]>(agentsFetcher);
@@ -49,13 +51,35 @@ export function PixelOffice() {
     if (!canvasRef.current) return;
     const pixi = new PixiApp();
     pixiRef.current = pixi;
-    pixi.init(canvasRef.current).catch(console.error);
+
+    pixi.init(canvasRef.current)
+      .then(() => {
+        // #27: flush any agents that arrived while PixiJS was still initializing
+        if (pendingAgentsRef.current) {
+          pixi.updateAgents(pendingAgentsRef.current);
+          pendingAgentsRef.current = null;
+        }
+      })
+      .catch((err: unknown) => {
+        // #26: WebGL / PixiJS init failure — show user-facing message
+        const msg = err instanceof Error ? err.message : String(err);
+        setInitError(msg);
+        console.error('[PixelOffice] PixiJS init failed:', err);
+      });
+
     return () => pixi.destroy();
   }, []);
 
   // Update sprites whenever agents data changes
   useEffect(() => {
-    if (agents) pixiRef.current?.updateAgents(agents);
+    if (!agents) return;
+    const pixi = pixiRef.current;
+    if (pixi?.isReady()) {
+      pixi.updateAgents(agents);
+    } else {
+      // #27: PixiJS not ready yet, buffer for flush after init
+      pendingAgentsRef.current = agents;
+    }
   }, [agents]);
 
   return (
@@ -76,18 +100,29 @@ export function PixelOffice() {
 
       {error && <div className="error-msg">数据加载失败：{error}</div>}
 
+      {initError && (
+        <div className="error-msg" style={{ marginBottom: 12 }}>
+          ⚠️ 像素引擎初始化失败（可能不支持 WebGL）<br />
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{initError}</span>
+          <br />
+          <span style={{ fontSize: 12 }}>请切换到 <a href="/" style={{ color: 'var(--accent)' }}>团队总览</a> 查看 Agent 状态。</span>
+        </div>
+      )}
+
       {loading && !agents && (
         <div style={{ height: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
           加载中…
         </div>
       )}
 
-      <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
-        <canvas
-          ref={canvasRef}
-          style={{ width: '100%', height: 500, display: 'block' }}
-        />
-      </div>
+      {!initError && (
+        <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
+          <canvas
+            ref={canvasRef}
+            style={{ width: '100%', height: 500, display: 'block' }}
+          />
+        </div>
+      )}
 
       {agents && (
         <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-muted)' }}>

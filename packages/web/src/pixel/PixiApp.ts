@@ -56,6 +56,10 @@ export class PixiApp {
     this.app.stage.addChild(g);
   }
 
+  isReady(): boolean {
+    return this.initialized && this.app !== null;
+  }
+
   updateAgents(agents: Agent[]) {
     if (!this.app || !this.initialized) return;
 
