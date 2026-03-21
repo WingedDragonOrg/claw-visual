@@ -36,6 +36,16 @@ export interface GitHubSummary {
   issues: GitHubIssue[];
 }
 
+export interface Channel {
+  id: string;
+  name: string;
+  type: "discord" | "telegram" | "signal" | "other";
+  agentIds: string[];
+  agentCount: number;
+  onlineCount: number;
+  lastActivity: string | null;
+}
+
 export interface DashboardData {
   totalAgents: number;
   online: number;
@@ -44,6 +54,8 @@ export interface DashboardData {
   error: number;
   offline: number;
   openIssues: number;
+  channels: Channel[];
+  activeChannels: number;
   recentActivities: Activity[];
   lastUpdated: string;
 }

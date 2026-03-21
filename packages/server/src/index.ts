@@ -1,10 +1,11 @@
 import http from 'node:http';
 import { URL } from 'node:url';
 import cors from 'cors';
-import type { Agent, DashboardData, Activity, GitHubSummary } from './types.js';
+import type { Agent, DashboardData, Activity, GitHubSummary, Channel } from './types.js';
 import { getMockAgents, getMockActivities, getMockActivitiesForAgent } from './mock-data.js';
 import { fetchAgentsFromFiles, fetchActivitiesFromFiles } from './openclaw.js';
 import { fetchGitHubIssues, getIssueCountForAgent } from './github.js';
+import { fetchChannels } from './channels.js';
 
 const PORT = Number(process.env.PORT) || 3200;
 const POLL_INTERVAL = 30_000;
@@ -12,6 +13,7 @@ const POLL_INTERVAL = 30_000;
 let cachedAgents: Agent[] = getMockAgents();
 let cachedActivities: Activity[] = getMockActivities();
 let cachedGitHub: GitHubSummary = { open: 0, byAssignee: {}, issues: [] };
+let cachedChannels: Channel[] = [];
 let useRealData = false;
 
 async function pollData() {
@@ -28,6 +30,8 @@ async function pollData() {
       cachedAgents = agents;
       cachedActivities = activities;
       cachedGitHub = github;
+      const onlineIds = new Set(agents.filter(a => a.status === 'online' || a.status === 'busy').map(a => a.id));
+      cachedChannels = fetchChannels(onlineIds);
       useRealData = true;
     }
   } catch (e) {
