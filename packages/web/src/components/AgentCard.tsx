@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useMemo } from 'react';
 import type { Agent } from '../types';
 import { timeAgo } from '../utils';
 import { StatusBadge } from './StatusBadge';
@@ -46,22 +46,67 @@ function useTilt() {
   return { cardRef, handleMouseMove, handleMouseLeave };
 }
 
+/**
+ * Generate stable gradient color from agent id.
+ * Used for uninitialized agents without avatar.
+ */
+function useAgentGradient(id: string) {
+  return useMemo(() => {
+    // Hash the id to get consistent colors
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      const char = id.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+
+    // Generate two colors from the hash
+    const hue1 = Math.abs(hash % 360);
+    const hue2 = (hue1 + 40) % 360;
+
+    return `linear-gradient(135deg, hsl(${hue1}, 70%, 50%), hsl(${hue2}, 70%, 50%))`;
+  }, [id]);
+}
+
 export function AgentCard({ agent }: { agent: Agent }) {
   const { cardRef, handleMouseMove, handleMouseLeave } = useTilt();
+  const gradient = useAgentGradient(agent.id);
+
+  const displayName = agent.uninitialized || !agent.name
+    ? agent.id
+    : agent.name;
+
+  const displayRole = agent.uninitialized || !agent.role
+    ? '未配置'
+    : agent.role;
+
+  const displayAvatar = agent.uninitialized || !agent.avatar
+    ? agent.id.charAt(0).toUpperCase()
+    : agent.avatar;
 
   return (
     <Link
       to={`/agents/${agent.id}`}
-      className="agent-card"
+      className={`agent-card ${agent.uninitialized ? 'agent-card--uninitialized' : ''}`}
       ref={cardRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
       <div className="agent-card-header">
-        <div className={`agent-avatar ${agent.status}`}>{agent.avatar}</div>
+        <div
+          className={`agent-avatar ${agent.status}`}
+          style={agent.uninitialized ? { background: gradient } : undefined}
+        >
+          {displayAvatar}
+        </div>
         <div className="agent-info">
-          <h3>{agent.name}</h3>
-          {agent.role && <span className="role">{agent.role}</span>}
+          <h3>
+            {displayName}
+            {agent.uninitialized && <span className="uninitialized-badge">未配置</span>}
+          </h3>
+          <span className={`role ${agent.uninitialized ? 'role--uninitialized' : ''}`}>
+            {displayRole}
+          </span>
         </div>
       </div>
       {agent.lastActivity && (

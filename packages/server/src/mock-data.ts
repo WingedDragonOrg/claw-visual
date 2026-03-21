@@ -65,6 +65,40 @@ export function getMockAgents(): Agent[] {
       pendingTasks: 0,
       heartbeatFailures: 0,
     },
+    // 未初始化的 agents（无 IDENTITY.md）
+    {
+      id: 'jiangong',
+      name: '',
+      role: '',
+      status: 'offline',
+      lastSeen: minutesAgo(300),
+      avatar: '',
+      pendingTasks: 0,
+      heartbeatFailures: 0,
+      uninitialized: true,
+    },
+    {
+      id: 'meishu',
+      name: '',
+      role: '',
+      status: 'offline',
+      lastSeen: minutesAgo(400),
+      avatar: '',
+      pendingTasks: 0,
+      heartbeatFailures: 0,
+      uninitialized: true,
+    },
+    {
+      id: 'xiaozhi',
+      name: '',
+      role: '',
+      status: 'offline',
+      lastSeen: minutesAgo(500),
+      avatar: '',
+      pendingTasks: 0,
+      heartbeatFailures: 0,
+      uninitialized: true,
+    },
   ];
 }
 

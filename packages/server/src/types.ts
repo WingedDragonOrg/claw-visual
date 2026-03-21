@@ -11,6 +11,7 @@ export interface Agent {
   heartbeatFailures: number;
   lastActivity?: string | null;
   issueCount?: number;
+  uninitialized?: boolean;
 }
 
 export interface Activity {
