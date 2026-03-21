@@ -1,4 +1,5 @@
 import type { DashboardData, GitHubSummary } from '../types';
+import { useCountUp } from '../hooks/useCountUp';
 
 interface Props {
   dashboard: DashboardData;
@@ -15,6 +16,7 @@ function formatAvgTime(hours: number): string {
 export function TeamStats({ dashboard, issues }: Props) {
   const { totalAgents, online } = dashboard;
   const onlineRate = totalAgents > 0 ? Math.round((online / totalAgents) * 100) : 0;
+  const animatedRate = useCountUp(onlineRate, 1500);
 
   return (
     <div className="team-stats">
@@ -30,11 +32,11 @@ export function TeamStats({ dashboard, issues }: Props) {
                 stroke="var(--green)"
                 strokeWidth="6"
                 strokeLinecap="round"
-                strokeDasharray={`${(onlineRate / 100) * 213.6} 213.6`}
+                strokeDasharray={`${(animatedRate / 100) * 213.6} 213.6`}
                 transform="rotate(-90 40 40)"
               />
             </svg>
-            <span className="rate-ring-value">{onlineRate}%</span>
+            <span className="rate-ring-value">{animatedRate}%</span>
           </div>
           <div className="online-rate-detail">
             <span className="online-rate-count">{online} / {totalAgents}</span>
