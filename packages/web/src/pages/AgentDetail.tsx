@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchAgents, fetchActivity } from '../api';
 import { timeAgo } from '../utils';
+import { ActivityChart } from '../components/ActivityChart';
 import type { Agent, Activity, AgentStatus } from '../types';
 
 const STATUS_LABELS: Record<AgentStatus, string> = {
@@ -244,6 +245,13 @@ export function AgentDetail() {
           </div>
         </div>
       </div>
+
+      {/* Activity Chart */}
+      {activities.length > 0 && (
+        <div className="detail-section">
+          <ActivityChart activities={activities} />
+        </div>
+      )}
 
       {/* Recent Activity */}
       <div className="detail-section">
