@@ -39,6 +39,9 @@ export function Layout() {
             <NavLink to="/channels" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               Channels
             </NavLink>
+            <NavLink to="/pixel" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+              🎮 Pixel
+            </NavLink>
           </div>
           <div className="nav-right">
             <TeamSwitcher />
