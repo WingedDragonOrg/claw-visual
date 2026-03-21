@@ -10,7 +10,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "cors": "^2.8.5"
+    "@hono/node-server": "^1.19.11",
+    "cors": "^2.8.5",
+    "hono": "^4.12.8"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

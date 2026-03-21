@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { serve } from '@hono/node-server';
 import { createApp, createDefaultState, type AppState } from './app.js';
-import type { Agent, Channel } from './types.js';
 import supertest from 'supertest';
 import type http from 'node:http';
 
@@ -11,7 +11,8 @@ describe('API Endpoints', () => {
 
   beforeAll(() => {
     state = createDefaultState();
-    server = createApp(state);
+    const app = createApp(state);
+    server = serve({ fetch: app.fetch, port: 0 }); // random port
     request = supertest(server);
   });
 
