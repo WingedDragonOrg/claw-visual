@@ -1,6 +1,7 @@
 import type { Agent, Activity, Channel, DashboardData, GitHubSummary } from './types';
 
-const BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_BASE || '';
+const BASE = `${API_BASE}/api`;
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);

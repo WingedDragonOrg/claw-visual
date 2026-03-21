@@ -1,4 +1,6 @@
 import http from 'node:http';
+import { readFile, stat } from 'node:fs/promises';
+import { join, extname } from 'node:path';
 import { URL } from 'node:url';
 import cors from 'cors';
 import type { Agent, DashboardData, Activity, GitHubSummary, Channel } from './types.js';
@@ -126,7 +128,7 @@ const CORS_ORIGINS = process.env.CORS_ORIGINS
 const corsMiddleware = cors({ origin: CORS_ORIGINS });
 
 const server = http.createServer((req, res) => {
-  corsMiddleware(req as any, res as any, () => {
+  corsMiddleware(req as any, res as any, async () => {
     const url = new URL(req.url || '/', `http://localhost:${PORT}`);
     const path = url.pathname;
 
@@ -194,6 +196,54 @@ const server = http.createServer((req, res) => {
         lastPollMs,
         uptime: Math.round((Date.now() - startTime) / 1000),
       });
+    }
+
+    // 静态文件服务：serve packages/web/dist
+    const WEB_DIR = join(import.meta.dirname, '../../web/dist');
+    const filePath = join(WEB_DIR, path === '/' ? '/index.html' : path);
+
+    // 防止路径遍历
+    if (!filePath.startsWith(WEB_DIR)) {
+      return json(res, { error: 'Forbidden' }, 403);
+    }
+
+    try {
+      const fileStat = await stat(filePath);
+      if (fileStat.isFile()) {
+        const ext = extname(filePath);
+        const contentTypes: Record<string, string> = {
+          '.html': 'text/html',
+          '.js': 'application/javascript',
+          '.css': 'text/css',
+          '.json': 'application/json',
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.svg': 'image/svg+xml',
+          '.ico': 'image/x-icon',
+          '.woff': 'font/woff',
+          '.woff2': 'font/woff2',
+          '.ttf': 'font/ttf',
+        };
+        const contentType = contentTypes[ext] || 'application/octet-stream';
+        const content = await readFile(filePath);
+        res.writeHead(200, { 'Content-Type': contentType });
+        return res.end(content);
+      }
+    } catch {
+      // 文件不存在，fall through
+    }
+
+    // SPA fallback：非 API 且非静态文件的请求返回 index.html
+    if (!path.startsWith('/api/')) {
+      try {
+        const indexPath = join(WEB_DIR, 'index.html');
+        const content = await readFile(indexPath);
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        return res.end(content);
+      } catch {
+        // index.html 不存在
+      }
     }
 
     json(res, { error: 'Not found' }, 404);

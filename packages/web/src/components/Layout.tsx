@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { fetchDashboard } from '../api';
 
 export function Layout() {
   const [onlineCount, setOnlineCount] = useState<number | null>(null);
@@ -7,11 +8,8 @@ export function Layout() {
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const res = await fetch('/api/dashboard');
-        if (res.ok) {
-          const data = await res.json();
-          setOnlineCount(data.online ?? null);
-        }
+        const data = await fetchDashboard();
+        setOnlineCount(data.online ?? null);
       } catch {
         // silently fail
       }

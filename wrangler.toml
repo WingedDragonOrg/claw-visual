@@ -1,0 +1,4 @@
+name = "claw-visual"
+
+[build]
+command = "cd packages/web && npm install && npm run build"
