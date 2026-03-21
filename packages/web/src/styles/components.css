@@ -211,14 +211,32 @@
   background: rgba(34,197,94,0.12);
   color: var(--green);
   box-shadow: 0 0 0 2px rgba(34,197,94,0.3);
-  animation: breathe 3s ease-in-out infinite;
+}
+.agent-avatar.online::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--green);
+  animation: breathe-ring 3s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .agent-avatar.busy {
   background: rgba(249,115,22,0.12);
   color: var(--orange);
   box-shadow: 0 0 0 2px rgba(249,115,22,0.3);
-  animation: pulse-orange 2s ease-in-out infinite;
+}
+.agent-avatar.busy::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--orange);
+  border-right-color: var(--orange);
+  animation: spin-ring 2s linear infinite;
+  pointer-events: none;
 }
 
 .agent-avatar.away {
@@ -236,6 +254,9 @@
 .agent-avatar.offline {
   background: rgba(107,114,128,0.1);
   color: var(--gray);
+  transform: scale(0.95);
+  opacity: 0.6;
+  transition: all 0.5s ease;
 }
 
 .agent-info {

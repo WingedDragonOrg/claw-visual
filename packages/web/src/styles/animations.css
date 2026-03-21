@@ -3,25 +3,57 @@
   50% { opacity: 0.3; }
 }
 
-@keyframes breathe {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
-}
-
-@keyframes pulse-orange {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(249,115,22,0.4); }
-  50% { box-shadow: 0 0 0 5px rgba(249,115,22,0); }
-}
-
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
+/* ====== Stagger entrance ====== */
+@keyframes stagger-in {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ====== Status rings (pseudo-element based, GPU accelerated) ====== */
+
+/* Online: breathing ring */
+@keyframes breathe-ring {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+/* Busy: spinning conic-gradient ring */
+@keyframes spin-ring {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ====== Reduced motion ====== */
 @media (prefers-reduced-motion: reduce) {
   .live-dot,
   .agent-avatar.online,
+  .agent-avatar.online::after,
   .agent-avatar.busy,
+  .agent-avatar.busy::after,
   .nav-badge .dot { animation: none; }
   .skeleton { animation: none; }
+  [style*="animation"] {
+    animation: none !important;
+  }
 }

@@ -1,5 +1,7 @@
 import type { DashboardData } from '../types';
 import { timeAgo } from '../utils';
+import { useCountUp } from '../hooks/useCountUp';
+import { StaggerIn } from '../components/StaggerIn';
 
 const STATS: { key: keyof DashboardData; label: string; color: string; icon: string; iconClass: string }[] = [
   { key: 'online', label: 'Online', color: 'var(--green)', icon: '\u25CF', iconClass: 'online' },
@@ -9,39 +11,48 @@ const STATS: { key: keyof DashboardData; label: string; color: string; icon: str
   { key: 'offline', label: 'Offline', color: 'var(--gray)', icon: '\u25CF', iconClass: 'offline' },
 ];
 
+function StatPill({ value, label, color, icon, iconClass, delay }: {
+  value: number;
+  label: string;
+  color: string;
+  icon: string;
+  iconClass: string;
+  delay: number;
+}) {
+  const displayValue = useCountUp(value, 800);
+
+  return (
+    <StaggerIn delay={delay}>
+      <div className="stat-pill">
+        <div className={`stat-icon ${iconClass}`}>
+          <span style={{ color }}>{icon}</span>
+        </div>
+        <div className="stat-info">
+          <div className="stat-value" style={{ color }}>{displayValue}</div>
+          <div className="stat-label">{label}</div>
+        </div>
+      </div>
+    </StaggerIn>
+  );
+}
+
 export function StatsBar({ data }: { data: DashboardData }) {
   return (
     <div className="stats-bar-wrapper">
       <div className="stats-bar">
-        <div className="stat-pill">
-          <div className="stat-icon total">
-            <span style={{ color: 'var(--accent)' }}>&#9632;</span>
-          </div>
-          <div className="stat-info">
-            <div className="stat-value" style={{ color: 'var(--accent)' }}>{data.totalAgents}</div>
-            <div className="stat-label">Total</div>
-          </div>
-        </div>
-        {STATS.map((s) => (
-          <div key={s.key} className="stat-pill">
-            <div className={`stat-icon ${s.iconClass}`}>
-              <span style={{ color: s.color }}>{s.icon}</span>
-            </div>
-            <div className="stat-info">
-              <div className="stat-value" style={{ color: s.color }}>{data[s.key] as number}</div>
-              <div className="stat-label">{s.label}</div>
-            </div>
-          </div>
+        <StatPill value={data.totalAgents} label="Total" color="var(--accent)" icon="&#9632;" iconClass="total" delay={0} />
+        {STATS.map((s, i) => (
+          <StatPill
+            key={s.key}
+            value={data[s.key] as number}
+            label={s.label}
+            color={s.color}
+            icon={s.icon}
+            iconClass={s.iconClass}
+            delay={(i + 1) * 50}
+          />
         ))}
-        <div className="stat-pill">
-          <div className="stat-icon issues">
-            <span style={{ color: 'var(--blue)' }}>&#9679;</span>
-          </div>
-          <div className="stat-info">
-            <div className="stat-value" style={{ color: 'var(--blue)' }}>{data.openIssues ?? 0}</div>
-            <div className="stat-label">Issues</div>
-          </div>
-        </div>
+        <StatPill value={data.openIssues ?? 0} label="Issues" color="var(--blue)" icon="&#9679;" iconClass="issues" delay={STATS.length * 50 + 50} />
       </div>
       <div className="stats-updated">Updated {timeAgo(data.lastUpdated)}</div>
     </div>
