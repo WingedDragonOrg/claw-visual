@@ -123,17 +123,17 @@ export function createApp(state: AppState = createDefaultState()): Hono {
     });
   });
 
+  // ── 404 for unknown API routes (must come before static files) ───────────────
+  app.all('/api/*', (c) => {
+    return c.json({ error: 'Not found' }, 404);
+  });
+
   // ── Static Files & SPA Fallback ─────────────────────────────────────────────
   // Serve static files from packages/web/dist
   app.use('/*', serveStatic({ root: './packages/web/dist' }));
 
   // SPA fallback - serve index.html for non-API routes
   app.use('*', serveStatic({ path: './packages/web/dist/index.html' }));
-
-  // ── Error Handling ─────────────────────────────────────────────────────────
-  app.notFound((c) => {
-    return c.json({ error: 'Not found' }, 404);
-  });
 
   return app;
 }
