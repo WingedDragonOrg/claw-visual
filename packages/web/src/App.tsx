@@ -4,6 +4,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { TeamOverview } from './pages/TeamOverview';
 import { ChannelView } from './pages/ChannelView';
 import { AgentDetail } from './pages/AgentDetail';
+import { SettingsPage } from './pages/SettingsPage';
 
 export function App() {
   return (
@@ -14,6 +15,7 @@ export function App() {
             <Route index element={<TeamOverview />} />
             <Route path="channels" element={<ChannelView />} />
             <Route path="agents/:id" element={<AgentDetail />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

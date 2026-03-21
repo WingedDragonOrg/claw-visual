@@ -44,6 +44,9 @@ export function Layout() {
                 {onlineCount} online
               </span>
             )}
+            <NavLink to="/settings" className={({ isActive }) => isActive ? 'nav-link nav-settings active' : 'nav-link nav-settings'} title="Settings">
+              &#9881;
+            </NavLink>
           </div>
         </div>
       </nav>
