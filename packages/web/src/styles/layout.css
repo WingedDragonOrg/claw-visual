@@ -167,3 +167,12 @@
   .app { padding: calc(var(--nav-height) + 16px) 12px 16px; }
   .nav-bar-inner { padding: 0 12px; }
 }
+
+:root[data-theme='light'] .nav-bar {
+  background: rgba(245,245,247,0.8);
+}
+
+:root[data-theme='light'] .skeleton {
+  background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.07) 50%, rgba(0,0,0,0.04) 75%);
+  background-size: 200% 100%;
+}
