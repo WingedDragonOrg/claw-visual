@@ -186,6 +186,21 @@ const server = http.createServer((req, res) => {
       return json(res, cachedGitHub);
     }
 
+    // GET /api/config/thresholds — expose status threshold constants for frontend
+    if (path === '/api/config/thresholds' && req.method === 'GET') {
+      const hour = new Date().getHours();
+      const isNightMode = hour >= 23 || hour < 8;
+      return json(res, {
+        isNightMode,
+        normal: { onlineMinutes: 5, busyMinutes: 30, awayMinutes: 90 },
+        night:  { onlineMinutes: 10, busyMinutes: 60, awayMinutes: 180 },
+        current: isNightMode
+          ? { onlineMinutes: 10, busyMinutes: 60, awayMinutes: 180 }
+          : { onlineMinutes: 5, busyMinutes: 30, awayMinutes: 90 },
+        heartbeatFailuresForError: 2,
+      });
+    }
+
     // Health check
     if (path === '/api/health') {
       return json(res, {
