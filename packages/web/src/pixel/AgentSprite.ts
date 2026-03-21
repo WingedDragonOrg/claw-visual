@@ -7,6 +7,7 @@ import { STATUS_TO_PIXEL } from './types';
 const SPRITE_SHEETS: Record<string, string> = {
   'xiaoai':   '/sprites/agent-xiaoai.png',
   'xiaochan': '/sprites/agent-xiaochan.png',
+  'xiaokai':  '/sprites/agent-xiaokai.png',
 };
 
 // Fallback pool — agents without a dedicated sprite reuse from this list
@@ -92,7 +93,8 @@ export class AgentSprite {
     const name = agent.name.toLowerCase().replace(/[\s同学]/g, '');
     if (name.includes('爱')) return 'xiaoai';
     if (name.includes('产') || name.includes('chan')) return 'xiaochan';
-    // Future: 小开 → xiaokai, 小审 → xiaoshen, 小测 → xiaoce, 小架 → xiaojia
+    if (name.includes('开') || name.includes('kai')) return 'xiaokai';
+    // Future: 小审 → xiaoshen, 小测 → xiaoce, 小架 → xiaojia
     return agent.id.toLowerCase();
   }
 
