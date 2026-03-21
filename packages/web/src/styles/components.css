@@ -210,31 +210,35 @@
 .agent-avatar.online {
   background: rgba(34,197,94,0.12);
   color: var(--green);
-  box-shadow: 0 0 0 2px rgba(34,197,94,0.3);
+  box-shadow: 0 0 8px rgba(34,197,94,0.4), 0 0 0 2px rgba(34,197,94,0.3);
+  transition: all 0.5s ease;
 }
 .agent-avatar.online::after {
   content: '';
   position: absolute;
-  inset: -4px;
+  inset: -5px;
   border-radius: 50%;
-  border: 2px solid var(--green);
-  animation: breathe-ring 3s ease-in-out infinite;
+  background: conic-gradient(from 0deg, transparent 0%, var(--green) 50%, transparent 100%);
+  opacity: 0.5;
+  animation: spin-ring 3s linear infinite;
   pointer-events: none;
+  z-index: -1;
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
 }
 
 .agent-avatar.busy {
   background: rgba(249,115,22,0.12);
   color: var(--orange);
-  box-shadow: 0 0 0 2px rgba(249,115,22,0.3);
+  box-shadow: 0 0 8px rgba(234,179,8,0.3), 0 0 0 2px rgba(249,115,22,0.3);
+  transition: all 0.5s ease;
 }
 .agent-avatar.busy::after {
   content: '';
   position: absolute;
-  inset: -4px;
+  inset: -5px;
   border-radius: 50%;
-  border: 2px solid transparent;
-  border-top-color: var(--orange);
-  border-right-color: var(--orange);
+  border: 2px dashed var(--orange);
   animation: spin-ring 2s linear infinite;
   pointer-events: none;
 }
@@ -243,19 +247,21 @@
   background: rgba(234,179,8,0.12);
   color: var(--yellow);
   box-shadow: 0 0 0 2px rgba(234,179,8,0.2);
+  transition: all 0.5s ease;
 }
 
 .agent-avatar.error {
   background: rgba(239,68,68,0.12);
   color: var(--red);
   box-shadow: 0 0 0 2px rgba(239,68,68,0.2);
+  transition: all 0.5s ease;
 }
 
 .agent-avatar.offline {
   background: rgba(107,114,128,0.1);
   color: var(--gray);
   transform: scale(0.95);
-  opacity: 0.6;
+  filter: grayscale(0.5) brightness(0.7);
   transition: all 0.5s ease;
 }
 

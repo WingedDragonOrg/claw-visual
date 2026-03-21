@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { fetchAgents, fetchActivity } from '../api';
 import { timeAgo } from '../utils';
 import { ActivityChart } from '../components/ActivityChart';
+import { StaggerIn } from '../components/StaggerIn';
 import type { Agent, Activity, AgentStatus } from '../types';
 
 const STATUS_LABELS: Record<AgentStatus, string> = {
@@ -264,7 +265,7 @@ export function AgentDetail() {
               const showDate = i === 0 ||
                 formatDateGroup(a.timestamp) !== formatDateGroup(recentActivities[i - 1].timestamp);
               return (
-                <div key={a.id}>
+                <StaggerIn key={a.id} delay={i * 50}>
                   {showDate && (
                     <div className="detail-date-group">{formatDateGroup(a.timestamp)}</div>
                   )}
@@ -278,7 +279,7 @@ export function AgentDetail() {
                     </span>
                     <span className="detail-activity-detail">{a.detail}</span>
                   </div>
-                </div>
+                </StaggerIn>
               );
             })}
           </div>
