@@ -6,6 +6,42 @@ import { ActivityChart } from '../components/ActivityChart';
 import { StaggerIn } from '../components/StaggerIn';
 import type { Agent, Activity, AgentStatus } from '../types';
 
+/**
+ * Generate a stable gradient color based on agent id
+ * Uses a hash function to create consistent colors
+ */
+function generateGradientColor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue1 = Math.abs(hash % 360);
+  const hue2 = (hue1 + 40) % 360;
+  return `linear-gradient(135deg, hsl(${hue1}, 70%, 50%), hsl(${hue2}, 70%, 40%)`;
+}
+
+/**
+ * Get display name for agent
+ * Returns agent name or "id (未配置)" for uninitialized agents
+ */
+function getDisplayName(agent: Agent): string {
+  if (agent.uninitialized || !agent.name) {
+    return `${agent.id} (未配置)`;
+  }
+  return agent.name;
+}
+
+/**
+ * Get avatar initials for agent
+ * Uses first letter of id for uninitialized agents
+ */
+function getAvatarInitials(agent: Agent): string {
+  if (agent.uninitialized || !agent.avatar) {
+    return agent.id.charAt(0).toUpperCase();
+  }
+  return agent.avatar;
+}
+
 const STATUS_LABELS: Record<AgentStatus, string> = {
   online: '在线',
   away: '离开',
@@ -222,19 +258,33 @@ export function AgentDetail() {
       {/* Hero */}
       <div className="detail-hero">
         <div className="detail-avatar-wrapper">
-          <div className={`detail-avatar-lg ${agent.status}`}>
-            {agent.avatar}
+          <div
+            className={`detail-avatar-lg ${agent.status} ${agent.uninitialized ? 'uninitialized' : ''}`}
+            style={agent.uninitialized ? { background: generateGradientColor(agent.id) } : {}}
+          >
+            {getAvatarInitials(agent)}
           </div>
         </div>
         <div className="detail-hero-info">
           <div className="detail-hero-name">
-            <h1>{agent.name}</h1>
+            <h1>{getDisplayName(agent)}</h1>
+            {agent.uninitialized && (
+              <span className="uninitialized-badge">未配置</span>
+            )}
             <span className={`status-badge ${agent.status}`}>
               <span className="dot" />
               {STATUS_LABELS[agent.status]}
             </span>
           </div>
-          <p className="detail-role">{agent.role}</p>
+          <p className={`detail-role ${agent.uninitialized ? 'role--uninitialized' : ''}`}>
+            {agent.uninitialized ? '尚未配置 IDENTITY.md' : agent.role}
+          </p>
+          {agent.uninitialized && (
+            <div className="uninitialized-hint">
+              <p>该 Agent 尚未配置 IDENTITY.md 文件，无法显示完整信息。</p>
+              <p className="hint-secondary">配置后将显示角色描述、活动统计等详细信息。</p>
+            </div>
+          )}
           <div className="detail-meta">
             <span>最后活跃：{timeAgo(agent.lastSeen)}</span>
             {agent.issueCount !== undefined && agent.issueCount > 0 && (
@@ -285,6 +335,19 @@ export function AgentDetail() {
           </div>
         )}
       </div>
+
+      {/* Uninitialized Hint */}
+      {agent.uninitialized && (
+        <div className="detail-section uninitialized-hint">
+          <div className="hint-icon">⚠️</div>
+          <p>
+            <strong>{agent.id}</strong> 尚未配置 IDENTITY.md
+          </p>
+          <p className="hint-secondary">
+            该 Agent 暂无法显示完整信息，配置后将显示角色描述。
+          </p>
+        </div>
+      )}
 
       {/* Status History */}
       {statusHistory.length > 0 && (
