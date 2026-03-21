@@ -4,8 +4,9 @@ import { join } from 'node:path';
 
 const AGENTS_DIR = process.env.AGENTS_DIR || '/home/ubuntu/.openclaw/agents';
 
-// Pattern: [Discord Guild #channelName channel id:1234567890]
-const DISCORD_CHANNEL_RE = /\[Discord Guild #(\S+) channel id:(\d+)/g;
+// Pattern: Guild #频道名 channel id:1234567890 (supports Chinese channel names)
+// Discord snowflake IDs are 17-20 digits
+const DISCORD_CHANNEL_RE = /Guild #(.+?) channel id:(\d{17,20})/g;
 
 interface ChannelRecord {
   id: string;
