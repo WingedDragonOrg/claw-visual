@@ -19,3 +19,14 @@ export const fetchIssues = () => get<GitHubSummary>('/issues');
 export const fetchChannels = () => get<Channel[]>('/channels');
 export const fetchChannelAgents = (channelId: string) =>
   get<Agent[]>(`/channels/${encodeURIComponent(channelId)}/agents`);
+
+export interface HealthData {
+  status: string;
+  dataSource: string;
+  agentsCount: number;
+  channelsCount: number;
+  lastPollMs: number;
+  uptime: number;
+}
+
+export const fetchHealth = () => get<HealthData>('/health');

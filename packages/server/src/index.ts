@@ -103,7 +103,7 @@ async function pollData() {
       cachedActivities = activities;
       cachedGitHub = github;
       const onlineIds = new Set(agents.filter(a => a.status === 'online' || a.status === 'busy').map(a => a.id));
-      cachedChannels = fetchChannels(onlineIds);
+      cachedChannels = await fetchChannels(onlineIds);
       useRealData = true;
       checkAgentStatusChanges(agents);
     }

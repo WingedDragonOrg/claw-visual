@@ -1,21 +1,23 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { fetchDashboard } from '../api';
+import { fetchDashboard, fetchHealth } from '../api';
 
 export function Layout() {
   const [onlineCount, setOnlineCount] = useState<number | null>(null);
+  const [isMock, setIsMock] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const fetchCount = async () => {
+    const fetchData = async () => {
       try {
-        const data = await fetchDashboard();
+        const [data, health] = await Promise.all([fetchDashboard(), fetchHealth()]);
         setOnlineCount(data.online ?? null);
+        setIsMock(health.dataSource !== 'openclaw-files');
       } catch {
         // silently fail
       }
     };
-    fetchCount();
-    const id = setInterval(fetchCount, 30_000);
+    fetchData();
+    const id = setInterval(fetchData, 30_000);
     return () => clearInterval(id);
   }, []);
 
@@ -45,6 +47,18 @@ export function Layout() {
           </div>
         </div>
       </nav>
+      {isMock === true && (
+        <div style={{
+          background: '#5c3a1e',
+          color: '#fbbf24',
+          padding: '8px 16px',
+          textAlign: 'center',
+          fontSize: '13px',
+          borderBottom: '1px solid #78522a',
+        }}>
+          ⚠️ 当前显示的是模拟数据，真实数据源暂不可用
+        </div>
+      )}
       <div className="app">
         <Outlet />
       </div>

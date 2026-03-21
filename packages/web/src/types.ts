@@ -54,6 +54,8 @@ export interface DashboardData {
   error: number;
   offline: number;
   openIssues: number;
+  channels: Channel[];
+  activeChannels: number;
   recentActivities: Activity[];
   lastUpdated: string;
 }
