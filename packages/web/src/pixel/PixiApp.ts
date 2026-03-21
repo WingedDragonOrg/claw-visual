@@ -1,13 +1,16 @@
 import { Application, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Agent } from '../types';
 import { AgentSprite } from './AgentSprite';
+import { SceneDecorations } from './SceneDecorations';
 import { assignSlotsByStatus, SCENE_W, SCENE_H, ZONES } from './SceneLayout';
 
 export class PixiApp {
   private app: Application | null = null;
   private sprites: Map<string, AgentSprite> = new Map();
+  private decorations: SceneDecorations | null = null;
   private initialized = false;
   private frame = 0;
+  private elapsed = 0; // seconds since init
   private resizeObserver: ResizeObserver | null = null;
 
   async init(canvas: HTMLCanvasElement) {
@@ -26,6 +29,11 @@ export class PixiApp {
 
     this.drawBackground();
 
+    // Decorations layer (plants, clouds, monitors) — added above background
+    const deco = new SceneDecorations();
+    this.decorations = deco;
+    app.stage.addChild(deco.container);
+
     // #28: Scale stage to container width while preserving SCENE_W×SCENE_H coordinate system
     const applyScale = () => {
       if (!this.app || !canvas.parentElement) return;
@@ -39,9 +47,11 @@ export class PixiApp {
     this.resizeObserver = new ResizeObserver(applyScale);
     if (canvas.parentElement) this.resizeObserver.observe(canvas.parentElement);
 
-    app.ticker.add(() => {
+    app.ticker.add((ticker) => {
       this.frame++;
+      this.elapsed += ticker.deltaMS / 1000;
       for (const sprite of this.sprites.values()) sprite.tick(this.frame);
+      this.decorations?.tick(this.elapsed, ticker.deltaTime);
     });
   }
 
@@ -113,6 +123,9 @@ export class PixiApp {
     const statuses = agents.map((a) => a.status);
     const slots = assignSlotsByStatus(statuses);
 
+    // Build monitor slot info (only desk area agents get a monitor)
+    const monitorSlots: { x: number; y: number; agentId: string; online: boolean }[] = [];
+
     agents.forEach((agent, i) => {
       const slot = slots[i];
       if (!slot) return;
@@ -127,7 +140,16 @@ export class PixiApp {
         stage.addChild(sprite.container);
         this.sprites.set(agent.id, sprite);
       }
+
+      if (slot.area === 'desk') {
+        monitorSlots.push({ x: slot.x, y: slot.y, agentId: agent.id, online: agent.status !== 'offline' && agent.status !== 'error' });
+      }
     });
+
+    // Refresh monitors (only rebuild if count changed to avoid flicker)
+    if (this.decorations) {
+      this.decorations.setMonitorSlots(monitorSlots);
+    }
 
     // Remove stale sprites
     const currentIds = new Set(agents.map((a) => a.id));
@@ -152,6 +174,8 @@ export class PixiApp {
     if (!this.app) return;
     for (const sprite of this.sprites.values()) sprite.destroy();
     this.sprites.clear();
+    this.decorations?.container.destroy({ children: true });
+    this.decorations = null;
     this.app.destroy();
     this.app = null;
     this.initialized = false;
