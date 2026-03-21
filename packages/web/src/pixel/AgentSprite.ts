@@ -105,6 +105,9 @@ export class AgentSprite {
   private agentKey: string;
   private tint: number | null;
   private destroyed = false;
+  private highlightBox: Graphics | null = null;
+  private isHovered = false;
+  private targetScale = 1.0;
 
   // Lerp target
   private targetX = 0;
@@ -117,14 +120,51 @@ export class AgentSprite {
     this.agentKey = this.resolveKey(agent);
     this.tint = resolveTint(this.agentKey);
 
-    // Click interaction
+    // Interaction
+    this.container.eventMode = 'static';
+    this.container.cursor = 'pointer';
+
     if (onClickCallback) {
-      this.container.eventMode = 'static';
-      this.container.cursor = 'pointer';
       this.container.on('pointerdown', (e) => {
         onClickCallback(agent, e.global.x, e.global.y);
       });
     }
+
+    // Hover highlight
+    const hlBox = new Graphics();
+    hlBox.roundRect(0, 0, 64, 64, 4).fill({ color: 0xffffff, alpha: 1 });
+    hlBox.alpha = 0;
+    this.container.addChild(hlBox);
+    this.highlightBox = hlBox;
+
+    this.container.on('pointerover', () => {
+      this.isHovered = true;
+      this.targetScale = 1.15;
+      if (this.highlightBox) this.highlightBox.alpha = 0.18;
+      if (this.animated) {
+        const baseTint = this.animated.tint as number;
+        const r = Math.min(0xff, ((baseTint >> 16) & 0xff) * 1.2) | 0;
+        const g = Math.min(0xff, ((baseTint >> 8) & 0xff) * 1.2) | 0;
+        const b = Math.min(0xff, (baseTint & 0xff) * 1.2) | 0;
+        this.animated.tint = (r << 16) | (g << 8) | b;
+      }
+    });
+
+    this.container.on('pointerout', () => {
+      this.isHovered = false;
+      this.targetScale = 1.0;
+      if (this.highlightBox) this.highlightBox.alpha = 0;
+      // Restore original tint
+      if (this.animated) {
+        if (this.agent.status === 'offline') {
+          this.animated.tint = 0x888888;
+        } else if (this.tint !== null) {
+          this.animated.tint = this.tint;
+        } else {
+          this.animated.tint = 0xffffff;
+        }
+      }
+    });
 
     // Name label
     const displayName = agent.name.replace(/同学$/g, '');
@@ -217,6 +257,10 @@ export class AgentSprite {
       this.container.x += dx * LERP_SPEED;
       this.container.y += dy * LERP_SPEED;
     }
+
+    // Smooth scale lerp
+    this.container.scale.x += (this.targetScale - this.container.scale.x) * 0.15;
+    this.container.scale.y = this.container.scale.x;
 
     // Error overlay blink
     if (this.errorOverlay) {
