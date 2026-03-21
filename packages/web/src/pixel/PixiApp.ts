@@ -8,6 +8,7 @@ export class PixiApp {
   private sprites: Map<string, AgentSprite> = new Map();
   private initialized = false;
   private frame = 0;
+  private resizeObserver: ResizeObserver | null = null;
 
   async init(canvas: HTMLCanvasElement) {
     const app = new Application();
@@ -24,6 +25,19 @@ export class PixiApp {
     this.initialized = true;
 
     this.drawBackground();
+
+    // #28: Scale stage to container width while preserving SCENE_W×SCENE_H coordinate system
+    const applyScale = () => {
+      if (!this.app || !canvas.parentElement) return;
+      const containerW = canvas.parentElement.clientWidth || SCENE_W;
+      const scale = containerW / SCENE_W;
+      canvas.style.width = `${containerW}px`;
+      canvas.style.height = `${Math.round(SCENE_H * scale)}px`;
+    };
+
+    applyScale();
+    this.resizeObserver = new ResizeObserver(applyScale);
+    if (canvas.parentElement) this.resizeObserver.observe(canvas.parentElement);
 
     app.ticker.add(() => {
       this.frame++;
@@ -126,6 +140,8 @@ export class PixiApp {
   }
 
   destroy() {
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
     if (!this.app) return;
     for (const sprite of this.sprites.values()) sprite.destroy();
     this.sprites.clear();

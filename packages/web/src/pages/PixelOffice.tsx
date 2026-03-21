@@ -2,7 +2,6 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import { fetchAgents } from '../api';
 import { usePolling } from '../hooks';
 import { PixiApp } from '../pixel/PixiApp';
-import { SCENE_W, SCENE_H } from '../pixel/SceneLayout';
 import type { Agent } from '../types';
 
 const STATUS_META: { status: Agent['status']; label: string; color: string }[] = [
@@ -94,9 +93,7 @@ export function PixelOffice() {
         <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
           <canvas
             ref={canvasRef}
-            width={SCENE_W}
-            height={SCENE_H}
-            style={{ width: '100%', height: 'auto', display: 'block', imageRendering: 'pixelated' }}
+            style={{ display: 'block', imageRendering: 'pixelated' }}
           />
         </div>
       )}
