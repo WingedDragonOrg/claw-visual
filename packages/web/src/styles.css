@@ -482,12 +482,146 @@ body {
   font-size: 13px;
 }
 
+/* Channel Cards Grid */
+.channels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.channel-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+
+.channel-card:hover {
+  background: var(--bg-hover);
+  border-color: #3a3a4a;
+}
+
+.channel-card.channel-online {
+  border-left: 3px solid var(--green);
+}
+
+.channel-card.channel-offline {
+  border-left: 3px solid var(--gray);
+}
+
+.channel-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.channel-info h3 {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.channel-type-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--accent);
+}
+
+.channel-type-badge.type-discord {
+  background: rgba(88, 101, 242, 0.12);
+  color: #7289da;
+}
+
+.channel-type-badge.type-telegram {
+  background: rgba(0, 136, 204, 0.12);
+  color: #0088cc;
+}
+
+.channel-type-badge.type-signal {
+  background: rgba(59, 134, 247, 0.12);
+  color: #3b86f7;
+}
+
+.channel-agent-count {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.channel-online-count {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.channel-total-count {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.channel-meta {
+  margin-bottom: 4px;
+}
+
+.channel-agents {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.channel-agent-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 13px;
+}
+
+.channel-agent-item .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.channel-agent-item .dot.online { background: var(--green); }
+.channel-agent-item .dot.away { background: var(--yellow); }
+.channel-agent-item .dot.busy { background: var(--orange); }
+.channel-agent-item .dot.error { background: var(--red); }
+.channel-agent-item .dot.offline { background: var(--gray); }
+
+.channel-agent-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.channel-agent-role {
+  color: var(--text-muted);
+  font-size: 12px;
+  flex: 1;
+}
+
+.channel-agents-loading {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 8px 0;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .stats-bar {
     grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
   }
-  .agents-grid {
+  .agents-grid,
+  .channels-grid {
     grid-template-columns: 1fr;
   }
 }
