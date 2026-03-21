@@ -460,6 +460,127 @@
   line-height: 1;
 }
 
+/* ====== Team Management (Settings) ====== */
+.team-list {
+  margin-bottom: 14px;
+}
+
+.team-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.team-item:last-child {
+  border-bottom: none;
+}
+
+.team-item-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.team-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.team-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.team-item-url {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-item-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.team-btn {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.team-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.team-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.team-btn-add {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.team-btn-add:hover {
+  opacity: 0.9;
+  background: var(--accent);
+  color: white;
+}
+
+.team-btn-add:disabled {
+  opacity: 0.4;
+}
+
+.team-btn-save {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.team-btn-save:hover {
+  opacity: 0.9;
+  background: var(--accent);
+  color: white;
+}
+
+.team-btn-delete:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.team-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.team-edit-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.team-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+}
+
 /* ====== Activity Chart ====== */
 .activity-chart {
   background: var(--glass-bg);

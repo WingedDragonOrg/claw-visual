@@ -1,3 +1,9 @@
+export interface Team {
+  id: string;
+  name: string;
+  gatewayUrl: string;
+}
+
 export type AgentStatus = 'online' | 'away' | 'busy' | 'error' | 'offline';
 
 export interface Agent {
