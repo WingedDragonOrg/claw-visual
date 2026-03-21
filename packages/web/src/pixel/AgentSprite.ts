@@ -122,19 +122,20 @@ export class AgentSprite {
     this.agentKey = this.resolveKey(agent);
     this.tint = resolveTint(this.agentKey);
 
-    // Name label
+    // Name label — show full name without 同学 suffix
+    const displayName = agent.name.replace(/同学$/g, '');
     this.label = new Text({
-      text: agent.name.replace(/同学/g, ''),
+      text: displayName,
       style: new TextStyle({
         fontFamily: 'monospace',
-        fontSize: 9,
-        fill: 0xdddddd,
+        fontSize: 10,
+        fill: 0xe0e0e0,
         align: 'center',
-        dropShadow: { color: 0x000000, distance: 1, blur: 0, angle: Math.PI / 4, alpha: 0.8 },
+        dropShadow: { color: 0x000000, distance: 1, blur: 1, angle: Math.PI / 4, alpha: 1 },
       }),
     });
     this.label.anchor.set(0.5, 0);
-    this.label.position.set(32, 66);
+    this.label.position.set(32, 67);
     this.container.addChild(this.label);
 
     // Status label

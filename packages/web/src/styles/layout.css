@@ -85,6 +85,16 @@
   border-radius: 1px;
 }
 
+/* Pixel tab — special highlight when active */
+.nav-link-pixel.active {
+  background: rgba(99, 102, 241, 0.12);
+  color: #a5b4fc;
+}
+.nav-link-pixel.active::after {
+  background: #818cf8;
+  box-shadow: 0 0 6px #818cf8;
+}
+
 .nav-right {
   display: flex;
   align-items: center;
