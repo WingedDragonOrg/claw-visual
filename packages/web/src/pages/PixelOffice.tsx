@@ -4,41 +4,124 @@ import { usePolling } from '../hooks';
 import { PixiApp } from '../pixel/PixiApp';
 import type { Agent } from '../types';
 
-const STATUS_META: { status: Agent['status']; label: string; color: string }[] = [
-  { status: 'online',  label: '在线（工作区）',  color: '#22c55e' },
-  { status: 'busy',    label: '忙碌（工作区）',  color: '#f97316' },
-  { status: 'away',    label: '离开（休息区）',  color: '#eab308' },
-  { status: 'offline', label: '离线',           color: '#6b7280' },
-  { status: 'error',   label: '异常',           color: '#ef4444' },
-];
+// ── Agent info popup ─────────────────────────────────────────────────────────
+const STATUS_DISPLAY: Record<Agent['status'], { label: string; color: string }> = {
+  online:  { label: '在线',  color: '#22c55e' },
+  busy:    { label: '忙碌中', color: '#f97316' },
+  away:    { label: '离开',  color: '#eab308' },
+  offline: { label: '离线',  color: '#6b7280' },
+  error:   { label: '异常',  color: '#ef4444' },
+};
 
-function Legend() {
+interface AgentPopupProps {
+  agent: Agent;
+  x: number;
+  y: number;
+  onClose: () => void;
+}
+
+function AgentPopup({ agent, x, y, onClose }: AgentPopupProps) {
+  const { label, color } = STATUS_DISPLAY[agent.status];
+  const displayName = agent.name.replace(/同学$/g, '');
+
+  // Keep popup within viewport
+  const popupW = 240;
+  const safeX = Math.min(x, window.innerWidth - popupW - 12);
+  const safeY = y - 10;
+
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', padding: '8px 0', fontSize: 11, color: 'var(--text-secondary)' }}>
-      {STATUS_META.map(({ status, label, color }) => (
-        <span key={status} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ width: 8, height: 8, display: 'inline-block', background: color, borderRadius: 2, flexShrink: 0 }} />
-          {label}
-        </span>
-      ))}
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: 'fixed',
+        left: safeX,
+        top: safeY,
+        zIndex: 300,
+        width: popupW,
+        background: 'rgba(12,12,26,0.96)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 12,
+        padding: '14px 16px',
+        backdropFilter: 'blur(10px)',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+        fontSize: 13,
+        color: 'var(--text-primary)',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 3 }}>{displayName}</div>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            fontSize: 12, color,
+          }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, display: 'inline-block' }} />
+            {label}
+          </span>
+        </div>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'none', border: 'none', color: 'var(--text-muted)',
+            cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 2px',
+          }}
+        >
+          ×
+        </button>
+      </div>
+
+      {agent.lastSeen && (
+        <div style={{ color: 'var(--text-secondary)', fontSize: 11, marginBottom: 6 }}>
+          最近活跃：{agent.lastSeen}
+        </div>
+      )}
+
+      {agent.role && (
+        <div style={{
+          background: 'rgba(255,255,255,0.05)', borderRadius: 6,
+          padding: '6px 10px', fontSize: 12, marginBottom: 6, color: 'var(--text-secondary)',
+        }}>
+          {agent.role}
+        </div>
+      )}
+
+      {agent.issueCount !== undefined && agent.issueCount > 0 && (
+        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
+          📋 {agent.issueCount} 个待处理 Issue
+        </div>
+      )}
     </div>
   );
 }
 
+// ── Main page ────────────────────────────────────────────────────────────────
 export function PixelOffice() {
-  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pixiRef = useRef<PixiApp | null>(null);
   const pendingAgentsRef = useRef<Agent[] | null>(null);
   const [initError, setInitError] = useState<string | null>(null);
+  const [popup, setPopup] = useState<{ agent: Agent; x: number; y: number } | null>(null);
 
   const agentsFetcher = useCallback(() => fetchAgents(), []);
   const { data: agents, error } = usePolling<Agent[]>(agentsFetcher);
+
+  // Close popup on outside click
+  useEffect(() => {
+    if (!popup) return;
+    const handler = () => setPopup(null);
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
+  }, [popup]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
     const pixi = new PixiApp();
     pixiRef.current = pixi;
+
+    // Wire click handler
+    pixi.setClickHandler((agent, sx, sy) => {
+      setPopup({ agent, x: sx, y: sy });
+    });
 
     pixi.init(canvasRef.current)
       .then(() => {
@@ -50,44 +133,36 @@ export function PixelOffice() {
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err);
         setInitError(msg);
-        console.error('[PixelOffice] init failed:', err);
       });
 
     return () => pixi.destroy();
   }, []);
 
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width;
-      if (width && pixiRef.current) pixiRef.current.resize(width);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  useEffect(() => {
     if (!agents) return;
     if (pixiRef.current?.isReady()) {
       pixiRef.current.updateAgents(agents);
+      // Update popup agent data if open
+      if (popup) {
+        const updated = agents.find((a) => a.id === popup.agent.id);
+        if (updated) setPopup((p) => p ? { ...p, agent: updated } : null);
+      }
     } else {
       pendingAgentsRef.current = agents;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agents]);
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
         <h2 className="section-title" style={{ margin: 0 }}>🎮 像素办公室</h2>
         {agents && (
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-            {agents.length} agents · 在线 {agents.filter((a) => a.status === 'online').length}
+            {agents.length} agents · 在线 {agents.filter((a) => a.status === 'online' || a.status === 'busy').length}
           </span>
         )}
       </div>
-
-      <Legend />
 
       {error && <div className="error-msg">数据加载失败：{error}</div>}
 
@@ -102,12 +177,23 @@ export function PixelOffice() {
       )}
 
       {!initError && (
-        <div ref={containerRef} style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
+        <div
+          style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--glass-border)', position: 'relative' }}
+        >
           <canvas
             ref={canvasRef}
             style={{ display: 'block', imageRendering: 'pixelated' }}
           />
         </div>
+      )}
+
+      {popup && (
+        <AgentPopup
+          agent={popup.agent}
+          x={popup.x}
+          y={popup.y}
+          onClose={() => setPopup(null)}
+        />
       )}
     </div>
   );
