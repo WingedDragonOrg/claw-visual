@@ -95,11 +95,20 @@ async function getSheet(path: string): Promise<Spritesheet> {
 // ──────────────────────────────────────────────
 // AgentSprite
 // ──────────────────────────────────────────────
+const STATUS_LABEL: Record<string, { text: string; color: number }> = {
+  online:  { text: '工作中', color: 0x22c55e },
+  busy:    { text: '忙碌',   color: 0xf97316 },
+  away:    { text: '休息',   color: 0xeab308 },
+  offline: { text: '离线',   color: 0x6b7280 },
+  error:   { text: '异常',   color: 0xef4444 },
+};
+
 export class AgentSprite {
   readonly container: Container;
   private agent: Agent;
   private animated: AnimatedSprite | null = null;
   private label: Text;
+  private statusLabel: Text;
   private errorOverlay: Graphics | null = null;
   private currentState: PixelState;
   private agentKey: string;
@@ -128,6 +137,21 @@ export class AgentSprite {
     this.label.anchor.set(0.5, 0);
     this.label.position.set(32, 67);
     this.container.addChild(this.label);
+
+    // Status label
+    const sl = STATUS_LABEL[agent.status] ?? STATUS_LABEL['offline'];
+    this.statusLabel = new Text({
+      text: sl.text,
+      style: new TextStyle({
+        fontFamily: 'monospace',
+        fontSize: 8,
+        fill: sl.color,
+        align: 'center',
+      }),
+    });
+    this.statusLabel.anchor.set(0.5, 0);
+    this.statusLabel.position.set(32, 78);
+    this.container.addChild(this.statusLabel);
 
     this.loadSheet();
   }
@@ -192,6 +216,12 @@ export class AgentSprite {
     const changed = this.currentState !== newState || agent.status !== this.agent.status;
     this.agent = agent;
     this.currentState = newState;
+
+    // Update labels
+    this.label.text = agent.name.replace(/同学/g, '');
+    const sl = STATUS_LABEL[agent.status] ?? STATUS_LABEL['offline'];
+    this.statusLabel.text = sl.text;
+    (this.statusLabel.style as TextStyle).fill = sl.color;
 
     if (!changed || !this.animated) return;
 
