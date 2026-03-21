@@ -135,7 +135,80 @@ export class SceneDecorations {
       g.rect(winX, 8, 80, 2).fill({ color: 0xa09080 });
     }
 
+    // ── Whiteboard (top-left, near bookshelf) ─────────────────────────────
+    // Outer frame
+    g.rect(44, 30, 80, 60).fill({ color: 0xe8e0d0 });
+    // Inner border (inset 1px)
+    g.rect(45, 31, 78, 58).fill({ color: 0xaaa090 });
+    g.rect(46, 32, 76, 56).fill({ color: 0xe8e0d0 });
+    // Horizontal lines
+    for (const ly of [42, 50, 58]) {
+      g.rect(48, ly, 70, 1).fill({ color: 0x8899aa, alpha: 0.7 });
+    }
+    // Bar chart
+    const bars = [
+      { bx: 48, h: 12 }, { bx: 56, h: 18 }, { bx: 64, h: 10 }, { bx: 72, h: 15 },
+    ];
+    for (const bar of bars) {
+      g.rect(bar.bx, 80 - bar.h, 6, bar.h).fill({ color: 0x5588cc, alpha: 0.8 });
+    }
+    // Trend line (4 points connected by thin rects)
+    const trendPts = [
+      { x: 50, y: 72 }, { x: 58, y: 64 }, { x: 66, y: 68 }, { x: 74, y: 58 },
+    ];
+    for (let i = 0; i < trendPts.length - 1; i++) {
+      const p0 = trendPts[i], p1 = trendPts[i + 1];
+      const dx = p1.x - p0.x;
+      const dy = p1.y - p0.y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx);
+      const seg = new Graphics();
+      seg.rect(0, -0.5, len, 1).fill({ color: 0xcc4444, alpha: 0.8 });
+      seg.position.set(p0.x, p0.y);
+      seg.rotation = angle;
+      this.container.addChild(seg);
+    }
+
+    // ── Desk coffee mugs ────────────────────────────────────────────────────
+    for (const slot of DESK_SLOTS) {
+      const mx = slot.x + 40, my = slot.y - 15;
+      g.rect(mx, my, 8, 10).fill({ color: 0xdddddd });       // cup body
+      g.rect(mx + 6, my + 2, 8, 5).fill({ color: 0xbbbbbb }); // handle
+      g.rect(mx + 1, my + 1, 6, 4).fill({ color: 0x6b3a1a }); // coffee
+    }
+
+    // ── Lounge rug ──────────────────────────────────────────────────────────
+    const rugX = LOUNGE_X, rugY = LOUNGE_Y + 100;
+    g.rect(rugX, rugY, 200, 120).fill({ color: 0x8b6c4a, alpha: 0.4 });
+    g.rect(rugX + 4, rugY + 4, 192, 112).fill({ color: 0x6b4c2a, alpha: 0.3 });
+    // Diamond pattern at center
+    const cx = LOUNGE_X + 100, cy = LOUNGE_Y + 160;
+    g.rect(cx - 1, cy - 10, 2, 20).fill({ color: 0xaa8866, alpha: 0.3 });
+    g.rect(cx - 10, cy - 1, 20, 2).fill({ color: 0xaa8866, alpha: 0.3 });
+    // Diagonal strokes for diamond shape
+    for (let d = 0; d < 10; d++) {
+      g.rect(cx - 10 + d, cy - d, 1, 1).fill({ color: 0xaa8866, alpha: 0.3 });
+      g.rect(cx + 10 - d, cy - d, 1, 1).fill({ color: 0xaa8866, alpha: 0.3 });
+      g.rect(cx - 10 + d, cy + d, 1, 1).fill({ color: 0xaa8866, alpha: 0.3 });
+      g.rect(cx + 10 - d, cy + d, 1, 1).fill({ color: 0xaa8866, alpha: 0.3 });
+    }
+
+    // ── Floor lamp (lounge) ─────────────────────────────────────────────────
+    const flx = LOUNGE_X + LOUNGE_W - 30, fly = LOUNGE_Y + 40;
+    g.rect(flx - 2, fly, 4, 60).fill({ color: 0xc0a050 });        // pole
+    g.rect(flx - 10, fly - 10, 20, 10).fill({ color: 0xffe8a0 }); // shade
+    g.ellipse(flx, fly + 10, 40, 25).fill({ color: 0xffeeaa, alpha: 0.08 }); // glow
+
     this.container.addChildAt(g, 0);
+
+    // ── Whiteboard label (added after Graphics so it sits on top) ────────
+    const boardLabel = new Text({
+      text: 'BOARD',
+      style: new TextStyle({ fontFamily: 'monospace', fontSize: 7, fill: 0x998880 }),
+    });
+    boardLabel.anchor.set(0.5, 0);
+    boardLabel.position.set(64, 92);
+    this.container.addChild(boardLabel);
   }
 
   // ─── Monitors (dynamic — per agent) ──────────────────────────────────────
