@@ -70,8 +70,24 @@ const server = http.createServer((req, res) => {
       return json(res, activities);
     }
 
+    // GET /api/channels
+    if (path === '/api/channels' && req.method === 'GET') {
+      return json(res, cachedChannels);
+    }
+
+    // GET /api/channels/:id/agents
+    const channelAgentsMatch = path.match(/^\/api\/channels\/([^/]+)\/agents$/);
+    if (channelAgentsMatch && req.method === 'GET') {
+      const channelId = channelAgentsMatch[1];
+      const channel = cachedChannels.find(c => c.id === channelId);
+      if (!channel) return json(res, { error: 'Channel not found' }, 404);
+      const agents = cachedAgents.filter(a => channel.agentIds.includes(a.id));
+      return json(res, agents);
+    }
+
     // GET /api/dashboard
     if (path === '/api/dashboard' && req.method === 'GET') {
+      const activeChannels = cachedChannels.filter(c => c.onlineCount > 0).length;
       const dashboard: DashboardData = {
         totalAgents: cachedAgents.length,
         online: cachedAgents.filter(a => a.status === 'online').length,
@@ -80,6 +96,8 @@ const server = http.createServer((req, res) => {
         error: cachedAgents.filter(a => a.status === 'error').length,
         offline: cachedAgents.filter(a => a.status === 'offline').length,
         openIssues: cachedGitHub.open,
+        channels: cachedChannels,
+        activeChannels,
         recentActivities: cachedActivities.slice(0, 20),
         lastUpdated: new Date().toISOString(),
       };
