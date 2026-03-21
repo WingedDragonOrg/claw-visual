@@ -3,7 +3,7 @@ import { URL } from 'node:url';
 import cors from 'cors';
 import type { Agent, DashboardData, Activity, GitHubSummary, Channel } from './types.js';
 import { getMockAgents, getMockActivities, getMockActivitiesForAgent } from './mock-data.js';
-import { fetchAgentsFromFiles, fetchActivitiesFromFiles } from './openclaw.js';
+import { fetchAgentsAndActivities } from './openclaw.js';
 import { fetchGitHubIssues, getIssueCountForAgent } from './github.js';
 import { fetchChannels } from './channels.js';
 
@@ -15,15 +15,18 @@ let cachedActivities: Activity[] = getMockActivities();
 let cachedGitHub: GitHubSummary = { open: 0, byAssignee: {}, issues: [] };
 let cachedChannels: Channel[] = [];
 let useRealData = false;
+let lastPollMs = 0;
+const startTime = Date.now();
 
 async function pollData() {
+  const pollStart = Date.now();
   try {
-    const agents = await fetchAgentsFromFiles();
-    const activities = await fetchActivitiesFromFiles();
-    const github = await fetchGitHubIssues();
+    const [{ agents, activities }, github] = await Promise.all([
+      fetchAgentsAndActivities(),
+      fetchGitHubIssues(),
+    ]);
 
     if (agents && agents.length > 0) {
-      // Attach GitHub issue counts to agents
       for (const agent of agents) {
         agent.issueCount = getIssueCountForAgent(github.byAssignee, agent.id);
       }
@@ -37,6 +40,7 @@ async function pollData() {
   } catch (e) {
     console.error('[claw-visual] Error polling data:', e);
   }
+  lastPollMs = Date.now() - pollStart;
 }
 
 // Initial poll + interval
@@ -114,7 +118,14 @@ const server = http.createServer((req, res) => {
 
     // Health check
     if (path === '/api/health') {
-      return json(res, { status: 'ok', dataSource: useRealData ? 'openclaw-files' : 'mock' });
+      return json(res, {
+        status: 'ok',
+        dataSource: useRealData ? 'openclaw-files' : 'mock',
+        agentsCount: cachedAgents.length,
+        channelsCount: cachedChannels.length,
+        lastPollMs,
+        uptime: Math.round((Date.now() - startTime) / 1000),
+      });
     }
 
     json(res, { error: 'Not found' }, 404);
