@@ -19,12 +19,14 @@ const STATUS_LABELS: Record<AgentStatus, string> = {
  */
 function useTilt() {
   const cardRef = useRef<HTMLAnchorElement>(null);
+  // Evaluate once at hook init — avoids creating MediaQueryList on every mousemove
+  const disabledRef = useRef(
+    window.matchMedia('(max-width: 768px)').matches ||
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
-    // Skip on mobile
-    if (window.matchMedia('(max-width: 768px)').matches) return;
-    // Skip if user prefers reduced motion
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (disabledRef.current) return;
 
     const el = cardRef.current;
     if (!el) return;
