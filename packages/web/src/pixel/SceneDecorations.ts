@@ -35,12 +35,30 @@ export class SceneDecorations {
   private drawOfficeFurniture() {
     const g = new Graphics();
 
-    // ── Floor tiles (checkerboard) ────────────────────────────────────────
+    // ── Floor tiles (warm wood checkerboard) ─────────────────────────────
     for (let x = 0; x < 1200; x += 40) {
       for (let y = 0; y < 500; y += 40) {
-        const shade = ((x / 40 + y / 40) % 2 === 0) ? 0x1a1a2e : 0x16213e;
+        const shade = ((x / 40 + y / 40) % 2 === 0) ? 0xd4956a : 0xc4855a;
         g.rect(x, y, 40, 40).fill({ color: shade });
       }
+    }
+
+    // ── Wall borders ────────────────────────────────────────────────────
+    // Left wall
+    g.rect(0, 18, 22, 500).fill({ color: 0xe8d5c0 });
+    g.rect(0, 18, 4, 500).fill({ color: 0xc8b5a0 }); // dark corner shadow
+    // Bottom wall (baseboard)
+    g.rect(0, 480, 1200, 20).fill({ color: 0xe0c8b0 });
+    g.rect(0, 478, 1200, 3).fill({ color: 0xc0a890 }); // baseboard highlight
+
+    // ── Ceiling light glows ─────────────────────────────────────────────
+    const glowCenters = [
+      { x: 250, y: 80 }, { x: 550, y: 80 },
+      { x: 250, y: 250 }, { x: 550, y: 250 },
+    ];
+    for (const gc of glowCenters) {
+      g.ellipse(gc.x, gc.y, 90, 50).fill({ color: 0xffeeaa, alpha: 0.06 });
+      g.ellipse(gc.x, gc.y, 20, 10).fill({ color: 0xffdd88, alpha: 0.08 });
     }
 
     // ── Desks ─────────────────────────────────────────────────────────────
@@ -101,11 +119,20 @@ export class SceneDecorations {
 
     // ── Top wall ─────────────────────────────────────────────────────────
     g.rect(0, 0, 1200, 18).fill({ color: 0x252540 });
-    // Windows on top wall
-    for (const wx_win of [180, 380, 580]) {
-      g.rect(wx_win, 2, 80, 14).fill({ color: 0x8ec5fc, alpha: 0.7 }); // sky
-      g.rect(wx_win + 38, 2, 4, 14).fill({ color: 0x252540 }); // frame
-      g.rect(wx_win, 8, 80, 2).fill({ color: 0x252540 }); // frame
+
+    // ── Windows on top wall ─────────────────────────────────────────────
+    const hour = new Date().getHours();
+    const isDaytime = hour >= 6 && hour < 20;
+    const skyColor = isDaytime ? 0x87ceeb : 0x1a1a3a;
+    for (const winX of [160, 360, 560]) {
+      // Outer frame (slightly darker border)
+      g.rect(winX - 1, 0, 82, 17).fill({ color: 0xa09080 });
+      // Sky fill
+      g.rect(winX, 1, 80, 15).fill({ color: skyColor });
+      // Vertical mullion
+      g.rect(winX + 39, 1, 2, 13).fill({ color: 0xa09080 });
+      // Horizontal mullion
+      g.rect(winX, 8, 80, 2).fill({ color: 0xa09080 });
     }
 
     this.container.addChildAt(g, 0);
