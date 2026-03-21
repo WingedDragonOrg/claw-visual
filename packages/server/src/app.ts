@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { serveStatic } from '@hono/node-server/serve-static';
+import { createNodeWebSocket } from '@hono/node-ws';
 import type { Agent, DashboardData, Activity, GitHubSummary, Channel } from './types.js';
 import { getMockAgents, getMockActivities, getMockActivitiesForAgent } from './mock-data.js';
 
@@ -31,7 +32,10 @@ const CORS_ORIGINS = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
   : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3200'];
 
-export function createApp(state: AppState = createDefaultState()): Hono {
+// WebSocket clients storage
+const wsClients = new Set<any>();
+
+export function createApp(state: AppState = createDefaultState()) {
   const app = new Hono();
 
   // CORS middleware
@@ -120,7 +124,49 @@ export function createApp(state: AppState = createDefaultState()): Hono {
       channelsCount: state.channels.length,
       lastPollMs: state.lastPollMs,
       uptime: Math.round((Date.now() - state.startTime) / 1000),
+      wsClients: wsClients.size,
     });
+  });
+
+  // ── WebSocket ─────────────────────────────────────────────────────────
+  const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
+
+  app.get('/ws', upgradeWebSocket(() => ({
+    onOpen(_event, ws) {
+      wsClients.add(ws);
+      console.log(`[ws] client connected, total: ${wsClients.size}`);
+    },
+    onMessage(event, ws) {
+      try {
+        const msg = JSON.parse(event.data.toString());
+        if (msg.type === 'ping') {
+          ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+        }
+      } catch {
+        // Ignore invalid messages
+      }
+    },
+    onClose(_event, ws) {
+      wsClients.delete(ws);
+      console.log(`[ws] client disconnected, total: ${wsClients.size}`);
+    },
+  })));
+
+  // Broadcast to all WebSocket clients
+  function broadcast(type: string, data: any) {
+    const msg = JSON.stringify({ type, data, timestamp: Date.now() });
+    wsClients.forEach(ws => {
+      try {
+        ws.send(msg);
+      } catch {
+        // Client might be disconnected
+      }
+    });
+  }
+
+  // ── 404 for unknown API routes (must come before static files) ───────────────
+  app.all('/api/*', (c) => {
+    return c.json({ error: 'Not found' }, 404);
   });
 
   // ── Static Files & SPA Fallback ─────────────────────────────────────────────
@@ -130,10 +176,5 @@ export function createApp(state: AppState = createDefaultState()): Hono {
   // SPA fallback - serve index.html for non-API routes
   app.use('*', serveStatic({ path: './packages/web/dist/index.html' }));
 
-  // ── Error Handling ─────────────────────────────────────────────────────────
-  app.notFound((c) => {
-    return c.json({ error: 'Not found' }, 404);
-  });
-
-  return app;
+  return { app, injectWebSocket, broadcast };
 }
