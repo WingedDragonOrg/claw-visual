@@ -3,10 +3,25 @@ import type { Agent } from '../types';
 import type { PixelState } from './types';
 import { STATUS_TO_PIXEL } from './types';
 
-// Maps agent id → sprite sheet path in /public/sprites/
-const SPRITE_SHEETS: Partial<Record<string, string>> = {
-  'xiaoai': '/sprites/agent-xiaoai.png',
+// Maps agent key → dedicated sprite sheet path in /public/sprites/
+const SPRITE_SHEETS: Record<string, string> = {
+  'xiaoai':   '/sprites/agent-xiaoai.png',
+  'xiaochan': '/sprites/agent-xiaochan.png',
 };
+
+// Fallback pool — agents without a dedicated sprite reuse from this list
+const FALLBACK_POOL = Object.values(SPRITE_SHEETS);
+
+/** Stable hash so the same agent always picks the same fallback sprite */
+function stableHash(str: string): number {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function resolveSpritePath(key: string): string {
+  return SPRITE_SHEETS[key] ?? FALLBACK_POOL[stableHash(key) % FALLBACK_POOL.length];
+}
 
 /** Frame size in the generated sprite sheet */
 const FRAME_W = 64;
@@ -70,18 +85,14 @@ export class AgentSprite {
 
     // Try to load sprite sheet, fall back to placeholder
     const agentKey = this.getAgentKey(agent);
-    const sheetPath = SPRITE_SHEETS[agentKey];
-    if (sheetPath) {
-      this.loadSheet(sheetPath);
-    } else {
-      this.drawPlaceholder();
-    }
+    this.loadSheet(resolveSpritePath(agentKey));
   }
 
   private getAgentKey(agent: Agent): string {
-    // Match by name patterns (simplified, expand as more sheets arrive)
-    const name = agent.name.toLowerCase().replace(/\s/g, '');
+    const name = agent.name.toLowerCase().replace(/[\s同学]/g, '');
     if (name.includes('爱')) return 'xiaoai';
+    if (name.includes('产') || name.includes('chan')) return 'xiaochan';
+    // Future: 小开 → xiaokai, 小审 → xiaoshen, 小测 → xiaoce, 小架 → xiaojia
     return agent.id.toLowerCase();
   }
 
