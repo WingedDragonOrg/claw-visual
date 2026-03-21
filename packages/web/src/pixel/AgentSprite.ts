@@ -112,6 +112,8 @@ export class AgentSprite {
   // Lerp target
   private targetX = 0;
   private targetY = 0;
+  private breathePhase = 0;
+  private isAtDesk = false;
 
   constructor(agent: Agent, onClickCallback?: (agent: Agent, screenX: number, screenY: number) => void) {
     this.agent = agent;
@@ -119,6 +121,7 @@ export class AgentSprite {
     this.container = new Container();
     this.agentKey = this.resolveKey(agent);
     this.tint = resolveTint(this.agentKey);
+    this.breathePhase = Math.random() * Math.PI * 2;
 
     // Interaction
     this.container.eventMode = 'static';
@@ -262,6 +265,13 @@ export class AgentSprite {
     this.container.scale.x += (this.targetScale - this.container.scale.x) * 0.15;
     this.container.scale.y = this.container.scale.x;
 
+    // Idle breathing animation for online agents at desk
+    if (this.isAtDesk && this.agent.status !== 'offline') {
+      this.breathePhase += 0.05;
+      // Gentle horizontal sway (1-2px)
+      this.animated!.x = Math.sin(this.breathePhase) * 1.5;
+    }
+
     // Error overlay blink
     if (this.errorOverlay) {
       this.errorOverlay.alpha = frame % 40 < 20 ? 0.35 : 0;
@@ -274,13 +284,32 @@ export class AgentSprite {
   }
 
   /** Set target position; container lerps there over subsequent frames */
-  moveTo(x: number, y: number) {
+  moveTo(x: number, y: number, isDesk: boolean = false) {
     this.targetX = x - 32;
     this.targetY = y - 32;
+    this.isAtDesk = isDesk;
     // Snap on first placement (container is at 0,0)
     if (this.container.x === 0 && this.container.y === 0) {
       this.container.position.set(this.targetX, this.targetY);
     }
+    // Switch to 'work' animation when arriving at desk and online
+    if (isDesk && this.agent.status === 'online' && this.animated) {
+      this.switchAnimation('work');
+    }
+  }
+
+  private switchAnimation(state: PixelState) {
+    if (!this.animated || this.currentState === state) return;
+    this.currentState = state;
+    const sheet = this.animated.texture.source;
+    // Re-fetch from cache
+    getSheet(resolveSpritePath(this.agentKey)).then((s) => {
+      if (this.destroyed) return;
+      const textures = s.animations[state] ?? s.animations['idle'];
+      this.animated!.textures = textures;
+      this.animated!.animationSpeed = ANIM_SPEED[state];
+      this.animated!.play();
+    });
   }
 
   setState(agent: Agent) {

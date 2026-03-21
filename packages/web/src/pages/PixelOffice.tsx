@@ -39,18 +39,25 @@ function AgentPopup({ agent, x, y, onClose }: AgentPopupProps) {
         zIndex: 300,
         width: popupW,
         background: 'rgba(12,12,26,0.96)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        borderRadius: 12,
+        border: '3px solid #6b5a4a',
+        borderRadius: 0, // pixel style = no rounded corners
         padding: '14px 16px',
         backdropFilter: 'blur(10px)',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+        boxShadow: '4px 4px 0 #3a3a50, 0 8px 24px rgba(0,0,0,0.5)',
         fontSize: 13,
         color: 'var(--text-primary)',
+        imageRendering: 'pixelated',
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
         <div>
-          <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 3 }}>{displayName}</div>
+          <div style={{
+            fontWeight: 600,
+            fontSize: 15,
+            marginBottom: 3,
+            fontFamily: 'monospace', // pixel font feel
+            letterSpacing: '0.5px',
+          }}>{displayName}</div>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 5,
             fontSize: 12, color,
@@ -156,7 +163,12 @@ export function PixelOffice() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
-        <h2 className="section-title" style={{ margin: 0 }}>🎮 像素办公室</h2>
+        <h2 className="section-title" style={{
+          margin: 0,
+          fontFamily: 'monospace',
+          letterSpacing: '1px',
+          textShadow: '2px 2px 0 #3a3a50',
+        }}>🎮 像素办公室</h2>
         {agents && (
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
             {agents.length} agents · 在线 {agents.filter((a) => a.status === 'online' || a.status === 'busy').length}

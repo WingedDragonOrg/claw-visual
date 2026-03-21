@@ -126,10 +126,10 @@ export class PixiApp {
       if (this.sprites.has(agent.id)) {
         const sprite = this.sprites.get(agent.id)!;
         sprite.setState(agent);
-        sprite.moveTo(slot.x, slot.y);
+        sprite.moveTo(slot.x, slot.y, slot.area === 'desk');
       } else {
         const sprite = new AgentSprite(agent, clickHandler);
-        sprite.moveTo(slot.x, slot.y);
+        sprite.moveTo(slot.x, slot.y, slot.area === 'desk');
         stage.addChild(sprite.container);
         this.sprites.set(agent.id, sprite);
       }
