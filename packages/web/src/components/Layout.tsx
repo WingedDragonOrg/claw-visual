@@ -1,10 +1,13 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { fetchDashboard, fetchHealth } from '../api';
+import { TeamSwitcher } from './TeamSwitcher';
+import { useTeam } from './TeamContext';
 
 export function Layout() {
   const [onlineCount, setOnlineCount] = useState<number | null>(null);
   const [isMock, setIsMock] = useState<boolean | null>(null);
+  const { activeTeam } = useTeam();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -19,7 +22,7 @@ export function Layout() {
     fetchData();
     const id = setInterval(fetchData, 30_000);
     return () => clearInterval(id);
-  }, []);
+  }, [activeTeam]);
 
   return (
     <>
@@ -38,6 +41,7 @@ export function Layout() {
             </NavLink>
           </div>
           <div className="nav-right">
+            <TeamSwitcher />
             {onlineCount !== null && (
               <span className="nav-badge">
                 <span className="dot" />
