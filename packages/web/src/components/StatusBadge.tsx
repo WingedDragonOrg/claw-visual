@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { fetchThresholds, type ThresholdData } from '../api';
 import type { AgentStatus } from '../types';
 import { Tooltip } from './Tooltip';
+import { useThresholds } from '../context/ThresholdsContext';
+import type { ThresholdData } from '../api';
 
 const STATUS_ICONS: Record<AgentStatus, string> = {
   online:  '🟢',
@@ -19,7 +19,7 @@ const STATUS_LABELS: Record<AgentStatus, string> = {
   error:   '异常',
 };
 
-// Static fallback descriptions — shown when thresholds haven't loaded yet
+// Static fallback descriptions — shown when thresholds haven't loaded or failed
 const STATIC_DESCS: Record<AgentStatus, string> = {
   online:  '近期有响应',
   busy:    '短时间无响应',
@@ -67,7 +67,7 @@ function buildTooltipContent(status: AgentStatus, t: ThresholdData | null) {
     );
   }
 
-  // Fallback: thresholds not yet loaded or failed
+  // Fallback: thresholds not yet loaded or fetch failed
   return (
     <span>
       <span className="tooltip-status-title">{STATUS_ICONS[status]} {STATUS_LABELS[status]}</span>
@@ -77,42 +77,17 @@ function buildTooltipContent(status: AgentStatus, t: ThresholdData | null) {
   );
 }
 
-// Singleton cache — thresholds only change every 30min at most
-let cachedThresholds: ThresholdData | null = null;
-let lastFetchTime = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-async function getThresholds(): Promise<ThresholdData | null> {
-  const now = Date.now();
-  if (cachedThresholds && now - lastFetchTime < CACHE_TTL) return cachedThresholds;
-  try {
-    const data = await fetchThresholds();
-    cachedThresholds = data;
-    lastFetchTime = now;
-    return data;
-  } catch {
-    return cachedThresholds; // return stale on error
-  }
-}
-
 interface StatusBadgeProps {
   status: AgentStatus;
 }
 
 /**
- * Status badge with hover tooltip showing threshold definition.
- * Tooltip content is dynamically fetched and cached.
+ * Status badge with hover tooltip.
+ * Thresholds sourced from ThresholdsContext (single fetch, app-wide shared).
  */
 export function StatusBadge({ status }: StatusBadgeProps) {
-  const [thresholds, setThresholds] = useState<ThresholdData | null>(cachedThresholds);
+  const { thresholds } = useThresholds();
 
-  useEffect(() => {
-    if (!thresholds) {
-      getThresholds().then(setThresholds);
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Always render Tooltip — uses static fallback when thresholds aren't loaded yet
   return (
     <Tooltip content={buildTooltipContent(status, thresholds)}>
       <span className={`status-badge ${status}`}>
