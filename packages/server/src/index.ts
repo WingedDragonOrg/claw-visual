@@ -6,9 +6,76 @@ import { getMockAgents, getMockActivities, getMockActivitiesForAgent } from './m
 import { fetchAgentsAndActivities } from './openclaw.js';
 import { fetchGitHubIssues, getIssueCountForAgent } from './github.js';
 import { fetchChannels } from './channels.js';
+import { notifyAgentOffline, notifyHeartbeatFailure, notifyAgentBack } from './notifier.js';
 
 const PORT = Number(process.env.PORT) || 3200;
 const POLL_INTERVAL = 30_000;
+const DEBOUNCE_MS = 10 * 60 * 1000; // 10 minutes
+
+interface AgentTrackingState {
+  status: Agent['status'];
+  offlineSince: number | null;
+  lastNotifiedAt: Record<string, number>; // notification type -> timestamp
+}
+
+const agentStateMap = new Map<string, AgentTrackingState>();
+
+function shouldNotify(state: AgentTrackingState, type: string): boolean {
+  const last = state.lastNotifiedAt[type] || 0;
+  return Date.now() - last >= DEBOUNCE_MS;
+}
+
+async function checkAgentStatusChanges(newAgents: Agent[]) {
+  const now = Date.now();
+
+  for (const agent of newAgents) {
+    const prev = agentStateMap.get(agent.id);
+    const isOnline = agent.status === 'online' || agent.status === 'busy';
+
+    if (!prev) {
+      agentStateMap.set(agent.id, {
+        status: agent.status,
+        offlineSince: isOnline ? null : now,
+        lastNotifiedAt: {},
+      });
+      continue;
+    }
+
+    const wasOnline = prev.status === 'online' || prev.status === 'busy';
+
+    // Agent went offline
+    if (wasOnline && !isOnline) {
+      prev.offlineSince = now;
+    }
+
+    // Agent back online from offline/error
+    if (!wasOnline && isOnline) {
+      if (shouldNotify(prev, 'back')) {
+        prev.lastNotifiedAt['back'] = now;
+        notifyAgentBack(agent);
+      }
+      prev.offlineSince = null;
+    }
+
+    // Offline for over 10 minutes
+    if (!isOnline && prev.offlineSince && now - prev.offlineSince >= DEBOUNCE_MS) {
+      if (shouldNotify(prev, 'offline')) {
+        prev.lastNotifiedAt['offline'] = now;
+        notifyAgentOffline(agent);
+      }
+    }
+
+    // Heartbeat failures >= 3
+    if (agent.heartbeatFailures >= 3) {
+      if (shouldNotify(prev, 'heartbeat')) {
+        prev.lastNotifiedAt['heartbeat'] = now;
+        notifyHeartbeatFailure(agent);
+      }
+    }
+
+    prev.status = agent.status;
+  }
+}
 
 let cachedAgents: Agent[] = getMockAgents();
 let cachedActivities: Activity[] = getMockActivities();
@@ -36,6 +103,7 @@ async function pollData() {
       const onlineIds = new Set(agents.filter(a => a.status === 'online' || a.status === 'busy').map(a => a.id));
       cachedChannels = fetchChannels(onlineIds);
       useRealData = true;
+      checkAgentStatusChanges(agents);
     }
   } catch (e) {
     console.error('[claw-visual] Error polling data:', e);
