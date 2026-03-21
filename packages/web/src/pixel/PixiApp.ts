@@ -125,6 +125,13 @@ export class PixiApp {
     }
   }
 
+  resize(containerWidth: number) {
+    if (!this.app) return;
+    const scale = containerWidth / SCENE_W;
+    this.app.renderer.resize(containerWidth, SCENE_H * scale);
+    this.app.stage.scale.set(scale);
+  }
+
   destroy() {
     if (!this.app) return;
     for (const sprite of this.sprites.values()) sprite.destroy();
