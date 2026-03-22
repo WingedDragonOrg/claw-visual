@@ -118,6 +118,11 @@ export class AgentSprite {
   private breathePhase = 0;
   private isAtDesk = false;
 
+  /** Returns agent's current world position */
+  getPosition(): { x: number; y: number } {
+    return { x: this.container.x + 32, y: this.container.y + 32 };
+  }
+
   constructor(agent: Agent, onClickCallback?: (agent: Agent, screenX: number, screenY: number) => void) {
     this.agent = agent;
     this.currentState = STATUS_TO_PIXEL[agent.status];
