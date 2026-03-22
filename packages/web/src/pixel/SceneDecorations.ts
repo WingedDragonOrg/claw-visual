@@ -454,10 +454,15 @@ export class SceneDecorations {
     // Build dynamic whiteboard content
     this.buildWhiteboard();
 
-    // Clock display (top-right corner)
+    // Clock display (top-right corner with panel)
+    const clockPanel = new Graphics();
+    clockPanel.roundRect(SCENE_W - 85, 5, 80, 20, 3);
+    clockPanel.fill({ color: 0x1a1a2e, alpha: 0.8 });
+    this.container.addChild(clockPanel);
+
     this.clockText = new Text({
       text: '',
-      style: new TextStyle({ fontFamily: 'monospace', fontSize: 5, fill: 0xaaaaaa }),
+      style: new TextStyle({ fontFamily: 'monospace', fontSize: 10, fill: 0x88ffaa, fontWeight: 'bold' }),
     });
     this.clockText.anchor.set(1, 0);
     this.clockText.position.set(SCENE_W - 10, 10);
