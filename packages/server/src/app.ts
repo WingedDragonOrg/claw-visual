@@ -2,7 +2,6 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { serveStatic } from '@hono/node-server/serve-static';
-import { createNodeWebSocket } from '@hono/node-ws';
 import type { Agent, DashboardData, Activity, GitHubSummary, Channel } from './types.js';
 import { getMockAgents, getMockActivities, getMockActivitiesForAgent } from './mock-data.js';
 
@@ -32,8 +31,8 @@ const CORS_ORIGINS = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
   : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3200'];
 
-// WebSocket clients storage
-const wsClients = new Set<any>();
+// WebSocket clients storage (exported so index.ts can manage connections)
+export const wsClients = new Set<any>();
 
 export function createApp(state: AppState = createDefaultState()) {
   const app = new Hono();
@@ -129,32 +128,11 @@ export function createApp(state: AppState = createDefaultState()) {
   });
 
   // ── WebSocket ─────────────────────────────────────────────────────────
-  const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
+  // Note: WebSocket upgrade handling is done in index.ts using native `ws` package
+  // to avoid @hono/node-ws / hono/ws import issue in Bun runtime.
+  // wsClients Set and broadcast() are managed there.
 
-  app.get('/ws', upgradeWebSocket(() => ({
-    onOpen(_event, ws) {
-      wsClients.add(ws);
-      console.log(`[ws] client connected, total: ${wsClients.size}`);
-    },
-    onMessage(event, ws) {
-      try {
-        const msg = JSON.parse(event.data.toString());
-        if (msg.type === 'ping') {
-          ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
-        } else if (msg.type === 'pong') {
-          // Client responded to heartbeat:ping, connection is alive
-        }
-      } catch {
-        // Ignore invalid messages
-      }
-    },
-    onClose(_event, ws) {
-      wsClients.delete(ws);
-      console.log(`[ws] client disconnected, total: ${wsClients.size}`);
-    },
-  })));
-
-  // Broadcast to all WebSocket clients
+  // Broadcast to all WebSocket clients (called from index.ts)
   function broadcast(type: string, data: any) {
     const msg = JSON.stringify({ type, data, timestamp: Date.now() });
     wsClients.forEach(ws => {
@@ -178,5 +156,5 @@ export function createApp(state: AppState = createDefaultState()) {
   // SPA fallback - serve index.html for non-API routes
   app.use('*', serveStatic({ path: '../web/dist/index.html' }));
 
-  return { app, injectWebSocket, broadcast };
+  return { app, broadcast };
 }
