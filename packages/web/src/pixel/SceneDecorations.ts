@@ -30,6 +30,9 @@ export class SceneDecorations {
   readonly container: Container;
   private monitors: MonitorEntry[] = [];
   private clouds: Cloud[] = [];
+  private windowClouds: { g: Graphics; winX: number; speed: number; phase: number }[] = [];
+  private projectorBeam: Graphics | null = null;
+  private projectorFlickerTimer = 0;
   private plants: Plant[] = [];
   private coffeeMachine: Graphics | null = null;
   private coffeeSteam: Graphics | null = null;
@@ -276,15 +279,28 @@ export class SceneDecorations {
     // Meeting table (large oval)
     g.ellipse(mx + mw / 2, my + mh / 2, 100, 60).fill({ color: 0x8b6040 });
     g.ellipse(mx + mw / 2, my + mh / 2, 96, 56).fill({ color: 0x9b7050 });
+    // Projector on ceiling
+    g.rect(mx + mw - 30, my - 5, 20, 10).fill({ color: 0x333344 });
+    g.rect(mx + mw - 28, my - 3, 16, 6).fill({ color: 0x4488aa, alpha: 0.5 }); // lens glow
     // Projector screen on wall
-    g.rect(mx + 40, my + 30, 160, 100).fill({ color: 0x333344 });
-    // Projector light beam (trapezoid)
-    g.moveTo(mx + 36, my - 10);
-    g.lineTo(mx + 204, my - 10);
-    g.lineTo(mx + 200, my + 130);
-    g.lineTo(mx + 40, my + 130);
-    g.closePath().fill({ color: 0x88ccff, alpha: 0.06 });
-    g.rect(mx + 42, my + 32, 156, 96).fill({ color: 0x4488aa, alpha: 0.3 });
+    g.rect(mx + 40, my + 30, 160, 100).fill({ color: 0x1a1a2e });
+    g.rect(mx + 42, my + 32, 156, 96).fill({ color: 0x2a3a4a, alpha: 0.9 });
+    // Projector light beam (trapezoid, stored for animation)
+    this.projectorBeam = new Graphics();
+    const drawBeam = (alpha: number) => {
+      if (!this.projectorBeam) return;
+      this.projectorBeam.clear();
+      // Light cone from projector to screen
+      this.projectorBeam.moveTo(mx + mw - 22, my + 2);
+      this.projectorBeam.lineTo(mx + 40, my + 30);
+      this.projectorBeam.lineTo(mx + 40, my + 126);
+      this.projectorBeam.lineTo(mx + mw - 22, my + 18);
+      this.projectorBeam.closePath().fill({ color: 0xaaddff, alpha });
+      // Screen glow (light hitting the wall)
+      this.projectorBeam.rect(mx + 42, my + 32, 156, 96).fill({ color: 0x88ccff, alpha: alpha * 0.5 });
+    };
+    drawBeam(0.12);
+    this.container.addChild(this.projectorBeam);
     // Meeting chairs around table
     const chairPositions = [
       { x: mx + mw / 2 - 120, y: my + mh / 2 - 20 },
@@ -352,6 +368,15 @@ export class SceneDecorations {
       g.rect(winX + 39, 6, 2, 26).fill({ color: 0xa09080 });
       // Horizontal mullion
       g.rect(winX, 18, 80, 2).fill({ color: 0xa09080 });
+
+      // Window cloud (white puffy cloud inside the window)
+      const wcG = new Graphics();
+      const wcX = winX + 10, wcY = 10;
+      wcG.ellipse(wcX, wcY, 12, 7).fill({ color: 0xffffff, alpha: 0.8 });
+      wcG.ellipse(wcX + 10, wcY - 3, 10, 6).fill({ color: 0xffffff, alpha: 0.8 });
+      wcG.ellipse(wcX - 8, wcY - 1, 8, 5).fill({ color: 0xffffff, alpha: 0.8 });
+      this.container.addChild(wcG);
+      this.windowClouds.push({ g: wcG, winX, speed: 0.3 + (winX % 5) * 0.1, phase: winX });
     }
 
     // ── Whiteboard (top-left, near bookshelf) — static frame ──────────────
@@ -846,6 +871,34 @@ export class SceneDecorations {
       const mm = String(now.getMinutes()).padStart(2, '0');
       const ss = String(now.getSeconds()).padStart(2, '0');
       this.clockText.text = `${hh}:${mm}:${ss}`;
+    }
+
+    // Window clouds drift animation
+    for (const wc of this.windowClouds) {
+      wc.g.x += wc.speed * deltaTime;
+      // Wrap around within window bounds (each window is 80px wide)
+      const winRight = wc.winX + 80;
+      if (wc.g.x > winRight) {
+        wc.g.x = wc.winX;
+      }
+    }
+
+    // Projector beam flicker
+    this.projectorFlickerTimer -= deltaTime;
+    if (this.projectorFlickerTimer <= 0) {
+      this.projectorFlickerTimer = 0.5 + Math.random() * 2;
+      // Subtle brightness variation
+      const alpha = 0.08 + Math.random() * 0.06;
+      if (this.projectorBeam) {
+        this.projectorBeam.clear();
+        const mx = 1100, my = 60, mw = 440;
+        this.projectorBeam.moveTo(mx + mw - 22, my + 2);
+        this.projectorBeam.lineTo(mx + 40, my + 30);
+        this.projectorBeam.lineTo(mx + 40, my + 126);
+        this.projectorBeam.lineTo(mx + mw - 22, my + 18);
+        this.projectorBeam.closePath().fill({ color: 0xaaddff, alpha });
+        this.projectorBeam.rect(mx + 42, my + 32, 156, 96).fill({ color: 0x88ccff, alpha: alpha * 0.5 });
+      }
     }
   }
 }
