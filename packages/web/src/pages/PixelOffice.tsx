@@ -306,6 +306,7 @@ export function PixelOffice() {
               entries={leaderboard}
               onAgentClick={(agentId) => {
                 // Highlight agent in PixiApp
+                pixiRef.current?.highlightAgent(agentId);
                 const agent = agents?.find((a) => a.id === agentId);
                 if (agent) setPopup({ agent, x: window.innerWidth / 2, y: window.innerHeight / 2 });
               }}
