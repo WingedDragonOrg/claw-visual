@@ -5,6 +5,7 @@ import { AgentCard } from '../components/AgentCard';
 import { ActivityFeed } from '../components/ActivityFeed';
 import { StatsBar } from '../components/StatsBar';
 import { TeamStats } from '../components/TeamStats';
+import { Panel } from '../components/ui/Panel';
 import type { Agent, AgentStatus, DashboardData, GitHubSummary } from '../types';
 import { StaggerIn } from '../components/StaggerIn';
 
@@ -76,27 +77,23 @@ export function TeamOverview() {
   }, [agents]);
 
   return (
-    <>
-      <div className="page-header">
-        <span className="live-dot" title="Auto-refreshing every 30s" />
-        <button className="refresh-btn" onClick={refresh}>Refresh</button>
-      </div>
+    <div className="team-layout">
+      {/* Collapsible sidebar */}
+      <Panel
+        side="left"
+        title="Team Overview"
+        defaultCollapsed={false}
+        width={260}
+      >
+        {/* Stats summary */}
+        {dashboard && <StatsBar data={dashboard} />}
+        {dashboard && <TeamStats dashboard={dashboard} issues={issues} />}
 
-      {agentsError && <div className="error-msg">API Error: {agentsError}</div>}
+        <hr className="ui-divider" />
 
-      {loading ? (
-        <>
-          <StatsSkeleton />
-          <div className="agents-grid">
-            {Array.from({ length: 6 }).map((_, i) => <AgentSkeleton key={i} />)}
-          </div>
-        </>
-      ) : (
-        <>
-          {dashboard && <StatsBar data={dashboard} />}
-
-          {dashboard && <TeamStats dashboard={dashboard} issues={issues} />}
-
+        {/* Status filters */}
+        <div className="sidebar-filters">
+          <div className="sidebar-section-label">Filter by status</div>
           <div className="status-filter">
             {FILTERS.map((f) => (
               <button
@@ -111,37 +108,55 @@ export function TeamOverview() {
               </button>
             ))}
           </div>
+        </div>
 
-          <section>
-            <h2 className="section-title">
-              Agents <span className="section-count">{filteredAgents.length}</span>
-            </h2>
-            <div className="agents-grid">
-              {filteredAgents.map((agent, i) => (
-                <StaggerIn key={agent.id} delay={i * 50}>
-                  <AgentCard agent={agent} />
-                </StaggerIn>
-              ))}
-              {filteredAgents.length === 0 && (
-                <div className="empty-state">No agents match this filter</div>
-              )}
-            </div>
-          </section>
+        {/* Activity feed in sidebar */}
+        {dashboard && dashboard.recentActivities.length > 0 && (
+          <>
+            <hr className="ui-divider" />
+            <div className="sidebar-section-label">Recent Activity</div>
+            <ActivityFeed activities={dashboard.recentActivities} />
+          </>
+        )}
+      </Panel>
 
-          {dashboard && dashboard.recentActivities.length > 0 && (
-            <section className="activity-section">
-              <h2 className="section-title">
-                Activity <span className="section-count">{dashboard.recentActivities.length}</span>
-              </h2>
-              <ActivityFeed activities={dashboard.recentActivities} />
+      {/* Main content */}
+      <main className="team-main">
+        <div className="page-header">
+          <span className="live-dot" title="Auto-refreshing every 30s" />
+          <button className="refresh-btn" onClick={refresh}>Refresh</button>
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>
+            {agents?.length ?? 0} agents
+          </span>
+        </div>
+
+        {agentsError && <div className="error-msg">API Error: {agentsError}</div>}
+
+        {loading ? (
+          <div className="agents-grid">
+            {Array.from({ length: 6 }).map((_, i) => <AgentSkeleton key={i} />)}
+          </div>
+        ) : (
+          <>
+            <section>
+              <div className="agents-grid">
+                {filteredAgents.map((agent, i) => (
+                  <StaggerIn key={agent.id} delay={i * 50}>
+                    <AgentCard agent={agent} />
+                  </StaggerIn>
+                ))}
+                {filteredAgents.length === 0 && (
+                  <div className="empty-state">No agents match this filter</div>
+                )}
+              </div>
             </section>
-          )}
-        </>
-      )}
+          </>
+        )}
 
-      <footer className="footer">
-        <span>Claw Visual v0.1 &middot; Powered by OpenClaw</span>
-      </footer>
-    </>
+        <footer className="footer">
+          <span>Claw Visual v0.1 &middot; Powered by OpenClaw</span>
+        </footer>
+      </main>
+    </div>
   );
 }
