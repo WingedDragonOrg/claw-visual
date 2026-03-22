@@ -1,4 +1,4 @@
-import { Application, ColorMatrixFilter, Container } from 'pixi.js';
+import { Application, ColorMatrixFilter, Container, Graphics } from 'pixi.js';
 import type { Agent, GitHubSummary } from '../types';
 import { AgentSprite } from './AgentSprite';
 import { SceneDecorations } from './SceneDecorations';
@@ -20,6 +20,9 @@ export class PixiApp {
   private elapsed = 0;
   private resizeObserver: ResizeObserver | null = null;
   private colorFilter: ColorMatrixFilter | null = null;
+  private nightOverlay: Graphics | null = null;
+  private overlayAlpha = 0;
+  private targetOverlayAlpha = 0;
   private dayNightTimer = 0;
   private onAgentClick: AgentClickHandler | null = null;
   private currentTheme: OfficeTheme = 'auto';
@@ -62,6 +65,15 @@ export class PixiApp {
     const filter = new ColorMatrixFilter();
     app.stage.filters = [filter];
     this.colorFilter = filter;
+
+    // Night overlay for smooth transitions
+    const overlay = new Graphics();
+    overlay.rect(0, 0, SCENE_W, SCENE_H);
+    overlay.fill(0x0a0a1a);
+    overlay.alpha = 0;
+    app.stage.addChild(overlay);
+    this.nightOverlay = overlay;
+
     this.applyDayNight();
 
     // Decorations below agents
@@ -81,6 +93,9 @@ export class PixiApp {
           this.dayNightTimer = 0;
           this.applyDayNight();
         }
+
+        // Smooth filter transition
+        this.animateFilter(ticker.deltaMS);
 
         for (const sprite of this.sprites.values()) sprite.tick(this.frame);
         this.decorations?.tick(this.elapsed, ticker.deltaTime);
@@ -168,6 +183,14 @@ export class PixiApp {
     this.world.position.set(this._offsetX, this._offsetY);
   }
 
+  /** Highlight an agent briefly (for event feedback) */
+  highlightAgent(agentId: string, durationMs = 1500) {
+    const sprite = this.sprites.get(agentId);
+    if (sprite) {
+      sprite.flash(durationMs);
+    }
+  }
+
   /** Reset pan and zoom to default */
   resetView() {
     if (!this.app) return;
@@ -198,47 +221,51 @@ export class PixiApp {
   }
 
   private applyDayNight() {
-    if (!this.colorFilter) return;
     const hour = new Date().getHours();
     const isNight = hour >= 22 || hour < 7;
-    const isDusk  = hour >= 18 || hour < 9;
+    const isDusk = hour >= 18 || hour < 9;
 
-    this.colorFilter.reset();
     if (isNight) {
-      this.colorFilter.brightness(0.55, false);
-      this.colorFilter.tint(0x8899cc, false);
+      this.targetOverlayAlpha = 0.45;
     } else if (isDusk) {
-      this.colorFilter.brightness(0.85, false);
-      this.colorFilter.tint(0xffcc88, false);
+      this.targetOverlayAlpha = 0.15;
+    } else {
+      this.targetOverlayAlpha = 0;
     }
-    // Daytime: no filter change (neutral)
+  }
+
+  /** Smooth overlay alpha transition */
+  private animateFilter(deltaMs: number) {
+    if (!this.nightOverlay) return;
+    const speed = 0.003; // alpha per ms
+    const diff = this.targetOverlayAlpha - this.overlayAlpha;
+    if (Math.abs(diff) < 0.001) {
+      this.overlayAlpha = this.targetOverlayAlpha;
+    } else {
+      this.overlayAlpha += Math.sign(diff) * Math.min(Math.abs(diff), speed * deltaMs);
+    }
+    this.nightOverlay.alpha = this.overlayAlpha;
   }
 
   /** Set office theme */
   setTheme(theme: OfficeTheme) {
-    if (!this.colorFilter) return;
     this.currentTheme = theme;
-    this.colorFilter.reset();
 
     switch (theme) {
       case 'auto':
         this.applyDayNight();
         break;
       case 'day':
-        // No filter - full brightness
+        this.targetOverlayAlpha = 0;
         break;
       case 'night':
-        this.colorFilter.brightness(0.55, false);
-        this.colorFilter.tint(0x8899cc, false);
+        this.targetOverlayAlpha = 0.45;
         break;
       case 'dusk':
-        this.colorFilter.brightness(0.85, false);
-        this.colorFilter.tint(0xffcc88, false);
+        this.targetOverlayAlpha = 0.15;
         break;
       case 'holiday':
-        this.colorFilter.brightness(0.9, false);
-        this.colorFilter.hue(30, false);
-        this.colorFilter.saturate(1.2, false);
+        this.targetOverlayAlpha = 0.05;
         break;
     }
   }
