@@ -5,8 +5,9 @@ Generate agent spritesheet using Jimeng AI API via mcporter.
 Usage:
   python3 generate_jimeng_spritesheet.py <agent_key> "<prompt>" [output_path]
 
-Examples:
-  python3 generate_jimeng_spritesheet.py xiaoai "A cute pixel art chibi AI agent..."
+The script generates 3 images (one per animation state), resizes each to 64x64,
+and tiles them into a 256x192 spritesheet (4 cols x 3 rows).
+Row 0 = idle, Row 1 = work, Row 2 = sleep/error
 """
 import subprocess
 import urllib.request
@@ -16,10 +17,8 @@ from io import BytesIO
 from PIL import Image
 
 OUT_DIR = "/home/ubuntu/claw-visual/packages/web/public/sprites"
-MCPORTER_BIN = "/home/ubuntu/.local/share/pnpm/mcporter"
 NODE_PATH = "/home/ubuntu/.local/share/pnpm/global/5/.pnpm/mcporter@0.7.3_hono@4.11.7/node_modules"
 BUN_BIN = "/home/ubuntu/.bun/bin/bun"
-NVM_SHELL = "/home/ubuntu/.nvm/nvm.sh"
 
 TARGET_W, TARGET_H = 256, 192
 FRAME_W, FRAME_H = 64, 64
@@ -53,7 +52,6 @@ def call_jimeng(prompt: str, aspect_ratio: str = "3:2") -> list[str]:
         print(f"STDERR: {result.stderr}", file=sys.stderr)
         raise RuntimeError(f"mcporter call failed with code {result.returncode}")
 
-    # Parse URLs from text output
     urls = []
     for line in result.stdout.split("\n"):
         line = line.strip()
@@ -78,26 +76,22 @@ def download_image(url: str) -> Image.Image:
 def make_spritesheet(images: list[Image.Image], output_path: str):
     """
     Combine up to 3 images into a 256x192 spritesheet (4 cols x 3 rows).
-
-    Row 0 (idle):  image[0] — extract 4 horizontal 64x64 tiles
-    Row 1 (work):  image[1] — same
-    Row 2 (sleep): image[2] — same
-
-    If fewer images available, pad with last image.
+    Each source image = one animation state (idle/work/sleep), resized to 64x64.
+    Row 0 (idle): frames[0] tiled 4x
+    Row 1 (work): frames[1] tiled 4x
+    Row 2 (sleep): frames[2] tiled 4x
     """
     result = Image.new("RGBA", (TARGET_W, TARGET_H), (0, 0, 0, 0))
 
-    # Resize each source to 256x192
-    resized = [img.resize((TARGET_W, TARGET_H), Image.LANCZOS) for img in images]
-    # Pad to 3
-    while len(resized) < 3:
-        resized.append(resized[-1])
+    # Resize each source to 64x64 (single frame)
+    frames = [img.resize((FRAME_W, FRAME_H), Image.LANCZOS) for img in images]
+    while len(frames) < 3:
+        frames.append(frames[-1] if frames else Image.new("RGBA", (FRAME_W, FRAME_H), (0, 0, 0, 0)))
 
     for row_idx in range(ROWS):
-        src = resized[row_idx]
+        frame = frames[row_idx]
         for col in range(COLS):
-            tile = src.crop((col * FRAME_W, 0, (col + 1) * FRAME_W, FRAME_H))
-            result.paste(tile, (col * FRAME_W, row_idx * FRAME_H))
+            result.paste(frame, (col * FRAME_W, row_idx * FRAME_H))
 
     result.save(output_path)
     print(f"Saved: {output_path} ({result.size})")
@@ -107,9 +101,8 @@ def main():
     if len(sys.argv) < 3:
         agent_key = "xiaoai"
         prompt = (
-            "A cute pixel art chibi AI agent avatar, 256x192 pixels total, "
-            "64x64 per frame, 4 frames in a row, clean pixel art style, "
-            "bright cheerful expression, simple clean background"
+            "pixel art chibi AI agent character, solid sky blue background #87CEEB, "
+            "limited color palette NES style, crisp pixel edges"
         )
     else:
         agent_key = sys.argv[1]
@@ -120,17 +113,22 @@ def main():
     print(f"=== Generating spritesheet for: {agent_key} ===")
     print(f"Output: {output_path}")
 
-    urls = call_jimeng(prompt)
-    if not urls:
-        print("No URLs returned, exiting.")
-        sys.exit(1)
+    # Generate 3 images for 3 states
+    state_prompts = [
+        f"{prompt} - idle pose, standing forward, friendly neutral expression",
+        f"{prompt} - working pose, hands on keyboard, focused expression",
+        f"{prompt} - resting or sleeping pose, eyes closed, calm relaxed expression",
+    ]
 
     images = []
-    for i, url in enumerate(urls[:4]):
-        try:
-            images.append(download_image(url))
-        except Exception as e:
-            print(f"  Download failed for image {i}: {e}", file=sys.stderr)
+    for i, sp in enumerate(state_prompts):
+        print(f"  State {i+1}/3: {sp[:70]}...")
+        urls = call_jimeng(sp)
+        if urls:
+            try:
+                images.append(download_image(urls[0]))
+            except Exception as e:
+                print(f"    Download failed: {e}", file=sys.stderr)
 
     if not images:
         print("No images downloaded.", file=sys.stderr)
