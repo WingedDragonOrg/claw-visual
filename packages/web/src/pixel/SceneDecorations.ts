@@ -122,7 +122,7 @@ export class SceneDecorations {
       g.ellipse(lc.x, lc.y - 5, 6, 4).fill({ color: 0xffffcc, alpha: 0.5 });
     }
 
-    // ── Desks (isometric style with depth) ────────────────────────────────────
+    // ── Desks (isometric style with depth, wood grain detail) ─────────────────
     for (const slot of DESK_SLOTS) {
       const dx = slot.x - 60, dy = slot.y - 20;
       // Desk top (parallelogram for 45° isometric feel)
@@ -131,18 +131,40 @@ export class SceneDecorations {
       g.lineTo(dx + 120, dy + 14);
       g.lineTo(dx, dy + 18);
       g.closePath().fill({ color: 0x8b5e3c });
+      // Wood grain layers (lighter planks)
+      g.moveTo(dx + 10, dy + 5);
+      g.lineTo(dx + 50, dy + 2);
+      g.lineTo(dx + 50, dy + 6);
+      g.lineTo(dx + 10, dy + 9);
+      g.closePath().fill({ color: 0x9b6e4c });
+      g.moveTo(dx + 55, dy + 1);
+      g.lineTo(dx + 110, dy - 1);
+      g.lineTo(dx + 110, dy + 3);
+      g.lineTo(dx + 55, dy + 5);
+      g.closePath().fill({ color: 0x7b4e2c });
       // Desk top highlight edge
       g.moveTo(dx, dy + 4);
       g.lineTo(dx + 120, dy);
       g.lineTo(dx + 120, dy + 3);
       g.lineTo(dx, dy + 7);
       g.closePath().fill({ color: 0xa0724a });
-      // Desk front face (depth)
+      // Desk front face (depth, darker wood)
       g.moveTo(dx, dy + 18);
       g.lineTo(dx + 120, dy + 14);
       g.lineTo(dx + 120, dy + 30);
       g.lineTo(dx, dy + 34);
       g.closePath().fill({ color: 0x6b4a2a });
+      // Front face wood grain
+      g.moveTo(dx + 20, dy + 20);
+      g.lineTo(dx + 20, dy + 30);
+      g.lineTo(dx + 22, dy + 30);
+      g.lineTo(dx + 22, dy + 20);
+      g.closePath().fill({ color: 0x5b3a1a });
+      g.moveTo(dx + 70, dy + 18);
+      g.lineTo(dx + 70, dy + 28);
+      g.lineTo(dx + 72, dy + 28);
+      g.lineTo(dx + 72, dy + 18);
+      g.closePath().fill({ color: 0x5b3a1a });
       // Desk legs (visible from front)
       g.rect(dx + 4, dy + 28, 6, 16).fill({ color: 0x5a3a1a });
       g.rect(dx + 110, dy + 28, 6, 16).fill({ color: 0x5a3a1a });
@@ -200,6 +222,12 @@ export class SceneDecorations {
     g.ellipse(mx + mw / 2, my + mh / 2, 96, 56).fill({ color: 0x9b7050 });
     // Projector screen on wall
     g.rect(mx + 40, my + 30, 160, 100).fill({ color: 0x333344 });
+    // Projector light beam (trapezoid)
+    g.moveTo(mx + 36, my - 10);
+    g.lineTo(mx + 204, my - 10);
+    g.lineTo(mx + 200, my + 130);
+    g.lineTo(mx + 40, my + 130);
+    g.closePath().fill({ color: 0x88ccff, alpha: 0.06 });
     g.rect(mx + 42, my + 32, 156, 96).fill({ color: 0x4488aa, alpha: 0.3 });
     // Meeting chairs around table
     const chairPositions = [
@@ -358,8 +386,12 @@ export class SceneDecorations {
     // ── Extra plant in lounge ──────────────────────────────────────────────
     const extraPlantX = LOUNGE_X + LOUNGE_W - 60, extraPlantY = LOUNGE_Y + LOUNGE_H - 20;
     g.rect(extraPlantX - 8, extraPlantY - 6, 16, 8).fill({ color: 0x8b4513 }); // pot
-    g.rect(extraPlantX - 6, extraPlantY - 30, 12, 24).fill({ color: 0x228b22 }); // leaves
+    g.rect(extraPlantX - 6, extraPlantY - 30, 12, 24).fill({ color: 0x228b22 }); // main leaves
     g.rect(extraPlantX - 3, extraPlantY - 40, 6, 12).fill({ color: 0x2a9a2a }); // tall leaf
+    // Extra leaf details
+    g.ellipse(extraPlantX - 12, extraPlantY - 20, 6, 4).fill({ color: 0x3aab3a });
+    g.ellipse(extraPlantX + 12, extraPlantY - 18, 6, 4).fill({ color: 0x228b22 });
+    g.ellipse(extraPlantX, extraPlantY - 45, 5, 4).fill({ color: 0x3aab3a });
 
     this.container.addChildAt(g, 0);
 
@@ -476,15 +508,27 @@ export class SceneDecorations {
       idx++;
 
       if (online) {
+        // Chair shadow on floor
+        g.ellipse(dx + 60, dy + 50, 28, 8).fill({ color: 0x000000, alpha: 0.15 });
         // Chair in seated position (in front of desk)
         g.rect(dx + 36, dy + 30, 48, 6).fill({ color: 0x3a3a5c }); // seat
         g.rect(dx + 44, dy + 36, 32, 14).fill({ color: 0x2e2e4a }); // base
         g.rect(dx + 44, dy + 14, 32, 18).fill({ color: 0x3a3a5c }); // back
+        // Backrest slats
+        g.rect(dx + 48, dy + 14, 2, 16).fill({ color: 0x4a4a6c });
+        g.rect(dx + 56, dy + 14, 2, 16).fill({ color: 0x4a4a6c });
+        g.rect(dx + 64, dy + 14, 2, 16).fill({ color: 0x4a4a6c });
+        // Seat cushion highlight
+        g.rect(dx + 38, dy + 30, 4, 4).fill({ color: 0x4a4a6c });
       } else {
         // Chair pushed aside (to the right of desk, slightly rotated feel via offset)
         g.rect(dx + 130, dy + 32, 48, 6).fill({ color: 0x3a3a5c }); // seat
         g.rect(dx + 138, dy + 38, 32, 14).fill({ color: 0x2e2e4a }); // base
         g.rect(dx + 138, dy + 16, 32, 18).fill({ color: 0x3a3a5c }); // back
+        // Backrest slats
+        g.rect(dx + 142, dy + 16, 2, 16).fill({ color: 0x4a4a6c });
+        g.rect(dx + 150, dy + 16, 2, 16).fill({ color: 0x4a4a6c });
+        g.rect(dx + 158, dy + 16, 2, 16).fill({ color: 0x4a4a6c });
       }
     }
   }
@@ -637,12 +681,20 @@ export class SceneDecorations {
 
   private drawPlant(g: Graphics) {
     g.clear();
+    // Pot
     g.rect(-6, 14, 12, 8).fill({ color: 0x8b5e3c });
     g.rect(-5, 13, 10, 2).fill({ color: 0x6d4a2f });
+    // Main stem
     g.rect(-1, 4, 2, 10).fill({ color: 0x4a7c3f });
-    g.ellipse(-6, 7, 7, 4).fill({ color: 0x3a9c35 });
-    g.ellipse(6, 5, 7, 4).fill({ color: 0x2d8a28 });
-    g.ellipse(0, 0, 5, 6).fill({ color: 0x45b03a });
+    // Multiple leaves with different shades
+    g.ellipse(-6, 7, 7, 4).fill({ color: 0x3a9c35 }); // left leaf
+    g.ellipse(6, 5, 7, 4).fill({ color: 0x2d8a28 }); // right leaf
+    g.ellipse(0, 0, 5, 6).fill({ color: 0x45b03a }); // center top leaf
+    // Extra leaves for fuller plant
+    g.ellipse(-10, 10, 5, 3).fill({ color: 0x2d8a28 }); // lower left
+    g.ellipse(10, 8, 5, 3).fill({ color: 0x3a9c35 }); // lower right
+    g.ellipse(-4, -3, 4, 3).fill({ color: 0x55c048 }); // small upper left
+    g.ellipse(4, -2, 4, 3).fill({ color: 0x3a9c35 }); // small upper right
   }
 
   // ─── Clouds ──────────────────────────────────────────────────────────────
