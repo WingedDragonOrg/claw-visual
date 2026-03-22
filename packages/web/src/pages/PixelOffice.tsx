@@ -1,8 +1,16 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { fetchAgents } from '../api';
 import { usePolling } from '../hooks';
-import { PixiApp } from '../pixel/PixiApp';
+import { PixiApp, type OfficeTheme } from '../pixel/PixiApp';
 import type { Agent } from '../types';
+
+const THEME_LABELS: Record<OfficeTheme, string> = {
+  auto: '自动',
+  day: '白天',
+  night: '夜晚',
+  dusk: '黄昏',
+  holiday: '节日',
+};
 
 // ── Agent info popup ─────────────────────────────────────────────────────────
 const STATUS_DISPLAY: Record<Agent['status'], { label: string; color: string }> = {
@@ -108,6 +116,14 @@ export function PixelOffice() {
   const pendingAgentsRef = useRef<Agent[] | null>(null);
   const [initError, setInitError] = useState<string | null>(null);
   const [popup, setPopup] = useState<{ agent: Agent; x: number; y: number } | null>(null);
+  const [theme, setTheme] = useState<OfficeTheme>('auto');
+
+  // Apply theme to PixiApp
+  useEffect(() => {
+    if (pixiRef.current?.isReady()) {
+      pixiRef.current.setTheme(theme);
+    }
+  }, [theme]);
 
   const agentsFetcher = useCallback(() => fetchAgents(), []);
   const { data: agents, error } = usePolling<Agent[]>(agentsFetcher);
@@ -162,18 +178,43 @@ export function PixelOffice() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
-        <h2 className="section-title" style={{
-          margin: 0,
-          fontFamily: 'monospace',
-          letterSpacing: '1px',
-          textShadow: '2px 2px 0 #3a3a50',
-        }}>🎮 像素办公室</h2>
-        {agents && (
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-            {agents.length} agents · 在线 {agents.filter((a) => a.status === 'online' || a.status === 'busy').length}
-          </span>
-        )}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+          <h2 className="section-title" style={{
+            margin: 0,
+            fontFamily: 'monospace',
+            letterSpacing: '1px',
+            textShadow: '2px 2px 0 #3a3a50',
+          }}>🎮 像素办公室</h2>
+          {agents && (
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              {agents.length} agents · 在线 {agents.filter((a) => a.status === 'online' || a.status === 'busy').length}
+            </span>
+          )}
+        </div>
+
+        {/* Theme Switcher */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>主题：</span>
+          {(Object.keys(THEME_LABELS) as OfficeTheme[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTheme(t)}
+              style={{
+                padding: '4px 10px',
+                fontSize: 12,
+                border: theme === t ? '1px solid var(--accent)' : '1px solid var(--glass-border)',
+                borderRadius: 4,
+                background: theme === t ? 'var(--accent-soft)' : 'transparent',
+                color: theme === t ? 'var(--accent)' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              {THEME_LABELS[t]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && <div className="error-msg">数据加载失败：{error}</div>}
