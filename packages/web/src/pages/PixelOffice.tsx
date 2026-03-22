@@ -134,7 +134,8 @@ export function PixelOffice() {
   const { data: githubSummary } = usePolling<GitHubSummary>(issuesFetcher);
 
   // Gamification
-  const { leaderboard, tick } = useGamification();
+  const prevGithubSummaryRef = useRef<GitHubSummary | undefined>(undefined);
+  const { leaderboard, tick, handleGitHubRefresh } = useGamification();
 
   // Close popup on outside click
   useEffect(() => {
@@ -185,12 +186,14 @@ export function PixelOffice() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agents]);
 
-  // Update whiteboard with GitHub issues data
+  // Update whiteboard with GitHub issues data + award issue points
   useEffect(() => {
     if (!githubSummary) return;
     if (pixiRef.current?.isReady()) {
       pixiRef.current.updateWhiteboard(githubSummary);
     }
+    handleGitHubRefresh(githubSummary, prevGithubSummaryRef.current);
+    prevGithubSummaryRef.current = githubSummary;
   }, [githubSummary]);
 
   return (

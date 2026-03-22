@@ -26,7 +26,7 @@ const SCORE_WEIGHTS: Record<AgentStatus, number> = {
   busy: 2,
   online: 1,
   away: 0,
-  offline: 0,
+  offline: -1,
   error: -1,
 };
 
