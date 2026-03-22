@@ -1,5 +1,5 @@
 import { Application, ColorMatrixFilter } from 'pixi.js';
-import type { Agent } from '../types';
+import type { Agent, GitHubSummary } from '../types';
 import { AgentSprite } from './AgentSprite';
 import { SceneDecorations } from './SceneDecorations';
 import { assignFixedSlots, SCENE_W, SCENE_H } from './SceneLayout';
@@ -130,6 +130,10 @@ export class PixiApp {
         this.colorFilter.saturate(1.2, false);
         break;
     }
+  }
+
+  updateWhiteboard(summary: GitHubSummary) {
+    this.decorations?.updateWhiteboard(summary);
   }
 
   isReady(): boolean {

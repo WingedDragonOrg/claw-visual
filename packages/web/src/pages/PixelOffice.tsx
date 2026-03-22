@@ -1,8 +1,8 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
-import { fetchAgents } from '../api';
+import { fetchAgents, fetchIssues } from '../api';
 import { usePolling } from '../hooks';
 import { PixiApp, type OfficeTheme } from '../pixel/PixiApp';
-import type { Agent } from '../types';
+import type { Agent, GitHubSummary } from '../types';
 
 const THEME_LABELS: Record<OfficeTheme, string> = {
   auto: '自动',
@@ -128,6 +128,9 @@ export function PixelOffice() {
   const agentsFetcher = useCallback(() => fetchAgents(), []);
   const { data: agents, error } = usePolling<Agent[]>(agentsFetcher);
 
+  const issuesFetcher = useCallback(() => fetchIssues(), []);
+  const { data: githubSummary } = usePolling<GitHubSummary>(issuesFetcher);
+
   // Close popup on outside click
   useEffect(() => {
     if (!popup) return;
@@ -175,6 +178,14 @@ export function PixelOffice() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agents]);
+
+  // Update whiteboard with GitHub issues data
+  useEffect(() => {
+    if (!githubSummary) return;
+    if (pixiRef.current?.isReady()) {
+      pixiRef.current.updateWhiteboard(githubSummary);
+    }
+  }, [githubSummary]);
 
   return (
     <div>
