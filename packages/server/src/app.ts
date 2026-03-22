@@ -141,6 +141,8 @@ export function createApp(state: AppState = createDefaultState()) {
         const msg = JSON.parse(event.data.toString());
         if (msg.type === 'ping') {
           ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+        } else if (msg.type === 'pong') {
+          // Client responded to heartbeat:ping, connection is alive
         }
       } catch {
         // Ignore invalid messages
