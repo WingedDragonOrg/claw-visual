@@ -266,10 +266,10 @@ export class AgentSprite {
     this.container.scale.y = this.container.scale.x;
 
     // Idle breathing animation for online agents at desk
-    if (this.isAtDesk && this.agent.status !== 'offline') {
+    if (this.isAtDesk && this.agent.status !== 'offline' && this.animated) {
       this.breathePhase += 0.05;
       // Gentle horizontal sway (1-2px)
-      this.animated!.x = Math.sin(this.breathePhase) * 1.5;
+      this.animated.x = Math.sin(this.breathePhase) * 1.5;
     }
 
     // Error overlay blink
@@ -304,11 +304,11 @@ export class AgentSprite {
     const sheet = this.animated.texture.source;
     // Re-fetch from cache
     getSheet(resolveSpritePath(this.agentKey)).then((s) => {
-      if (this.destroyed) return;
+      if (this.destroyed || !this.animated) return;
       const textures = s.animations[state] ?? s.animations['idle'];
-      this.animated!.textures = textures;
-      this.animated!.animationSpeed = ANIM_SPEED[state];
-      this.animated!.play();
+      this.animated.textures = textures;
+      this.animated.animationSpeed = ANIM_SPEED[state];
+      this.animated.play();
     });
   }
 
