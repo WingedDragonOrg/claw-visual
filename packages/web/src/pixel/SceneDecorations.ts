@@ -47,6 +47,11 @@ export class SceneDecorations {
   private prevWbOpen = -1;
   private prevWbClosed = -1;
 
+  // Team status panel
+  private teamOnlineText: Text | null = null;
+  private teamScoreText: Text | null = null;
+  private teamLabel: Text | null = null;
+
   // Clock display
   private clockText: Text | null = null;
 
@@ -350,13 +355,13 @@ export class SceneDecorations {
     }
 
     // ── Whiteboard (top-left, near bookshelf) — static frame ──────────────
-    // Outer frame
-    g.rect(44, 30, 80, 60).fill({ color: 0xe8e0d0 });
+    // Outer frame (expanded to show agent status)
+    g.rect(44, 30, 80, 80).fill({ color: 0xe8e0d0 });
     // Inner border (inset 1px)
-    g.rect(45, 31, 78, 58).fill({ color: 0xaaa090 });
-    g.rect(46, 32, 76, 56).fill({ color: 0xe8e0d0 });
+    g.rect(45, 31, 78, 78).fill({ color: 0xaaa090 });
+    g.rect(46, 32, 76, 76).fill({ color: 0xe8e0d0 });
     // Horizontal lines
-    for (const ly of [42, 50, 58]) {
+    for (const ly of [42, 50, 58, 66, 74]) {
       g.rect(48, ly, 70, 1).fill({ color: 0x8899aa, alpha: 0.7 });
     }
     // Dynamic content (bar chart + labels) built in buildWhiteboard()
@@ -477,17 +482,17 @@ export class SceneDecorations {
 
     // "BOARD" label
     this.whiteboardLabel = new Text({
-      text: 'ISSUES',
-      style: new TextStyle({ fontFamily: 'monospace', fontSize: 7, fill: 0x998880 }),
+      text: 'TEAM STATS',
+      style: new TextStyle({ fontFamily: 'monospace', fontSize: 6, fill: 0x998880 }),
     });
     this.whiteboardLabel.anchor.set(0.5, 0);
-    this.whiteboardLabel.position.set(84, 30);
+    this.whiteboardLabel.position.set(84, 32);
     this.container.addChild(this.whiteboardLabel);
 
     // Open count label
     this.whiteboardOpenText = new Text({
       text: '---',
-      style: new TextStyle({ fontFamily: 'monospace', fontSize: 6, fill: 0x5588cc }),
+      style: new TextStyle({ fontFamily: 'monospace', fontSize: 5, fill: 0x5588cc }),
     });
     this.whiteboardOpenText.anchor.set(0, 0);
     this.whiteboardOpenText.position.set(48, 68);
@@ -496,11 +501,29 @@ export class SceneDecorations {
     // Closed count label
     this.whiteboardClosedText = new Text({
       text: '---',
-      style: new TextStyle({ fontFamily: 'monospace', fontSize: 6, fill: 0xcc4444 }),
+      style: new TextStyle({ fontFamily: 'monospace', fontSize: 5, fill: 0xcc4444 }),
     });
     this.whiteboardClosedText.anchor.set(0, 0);
     this.whiteboardClosedText.position.set(80, 68);
     this.container.addChild(this.whiteboardClosedText);
+
+    // Team online count
+    this.teamOnlineText = new Text({
+      text: 'P: --/--',
+      style: new TextStyle({ fontFamily: 'monospace', fontSize: 5, fill: 0x44cc88 }),
+    });
+    this.teamOnlineText.anchor.set(0, 0);
+    this.teamOnlineText.position.set(48, 86);
+    this.container.addChild(this.teamOnlineText);
+
+    // Team score
+    this.teamScoreText = new Text({
+      text: 'PTS: ---',
+      style: new TextStyle({ fontFamily: 'monospace', fontSize: 5, fill: 0xffaa44 }),
+    });
+    this.teamScoreText.anchor.set(0, 0);
+    this.teamScoreText.position.set(80, 86);
+    this.container.addChild(this.teamScoreText);
 
     // Draw initial placeholder bars
     this.drawWhiteboardBars(0, 0);
@@ -552,6 +575,16 @@ export class SceneDecorations {
     this.drawWhiteboardBars(summary.open, summary.closed);
     this.whiteboardOpenText.text = `O:${summary.open}`;
     this.whiteboardClosedText.text = `C:${summary.closed}`;
+  }
+
+  /** Update team status display (online count and top score) */
+  updateTeamStatus(online: number, total: number, topScore: number) {
+    if (this.teamOnlineText) {
+      this.teamOnlineText.text = `P:${online}/${total}`;
+    }
+    if (this.teamScoreText) {
+      this.teamScoreText.text = `PTS:${topScore}`;
+    }
   }
 
   private drawChairs(g: Graphics, chairStates: Map<string, boolean>) {

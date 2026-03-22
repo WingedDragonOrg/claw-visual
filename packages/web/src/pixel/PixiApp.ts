@@ -280,6 +280,10 @@ export class PixiApp {
     this.decorations?.updateWhiteboard(summary);
   }
 
+  updateTeamStatus(online: number, total: number, topScore: number) {
+    this.decorations?.updateTeamStatus(online, total, topScore);
+  }
+
   isReady(): boolean {
     return this.initialized && this.app !== null;
   }
