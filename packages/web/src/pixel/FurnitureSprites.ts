@@ -1,6 +1,6 @@
 import { Assets, type Texture } from 'pixi.js';
 
-const BASE = '/sprites/furniture/Isometric';
+const BASE = '/sprites/kenney/Isometric';
 
 const FURNITURE_SPRITES: Record<string, string[]> = {
   plantSmall1: [
