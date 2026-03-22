@@ -1,5 +1,9 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
-import { SCENE_W, DESK_SLOTS, LOUNGE_X, LOUNGE_Y, LOUNGE_W, LOUNGE_H, WAYPOINTS } from './SceneLayout';
+import {
+  SCENE_W, SCENE_H, DESK_SLOTS, LOUNGE_X, LOUNGE_Y, LOUNGE_W, LOUNGE_H,
+  MEETING_X, MEETING_Y, MEETING_W, MEETING_H,
+  WAYPOINTS,
+} from './SceneLayout';
 import type { GitHubSummary } from '../types';
 
 /** A decorative monitor placed at each desk slot */
@@ -51,8 +55,8 @@ export class SceneDecorations {
     const g = new Graphics();
 
     // ── Floor tiles (warm wood checkerboard, softer creamier tones) ───────
-    for (let x = 0; x < 1200; x += 40) {
-      for (let y = 0; y < 500; y += 40) {
+    for (let x = 0; x < SCENE_W; x += 40) {
+      for (let y = 0; y < SCENE_H; y += 40) {
         // Warmer cream/beige instead of orange
         const shade = ((x / 40 + y / 40) % 2 === 0) ? 0xe8d4b8 : 0xd8c4a8;
         g.rect(x, y, 40, 40).fill({ color: shade });
@@ -60,13 +64,13 @@ export class SceneDecorations {
     }
 
     // ── Top wall (taller, 40px with brick pattern) ──────────────────────────
-    g.rect(0, 0, 1200, 40).fill({ color: 0x3a3a50 });
+    g.rect(0, 0, SCENE_W, 40).fill({ color: 0x3a3a50 });
     // Brick pattern lines
-    for (let bx = 0; bx < 1200; bx += 60) {
+    for (let bx = 0; bx < SCENE_W; bx += 60) {
       g.rect(bx, 0, 1, 40).fill({ color: 0x2a2a40 });
     }
     for (let by = 0; by < 40; by += 14) {
-      g.rect(0, by, 1200, 1).fill({ color: 0x2a2a40 });
+      g.rect(0, by, SCENE_W, 1).fill({ color: 0x2a2a40 });
       // Offset every other row
       if ((by / 14) % 2 === 1) {
         g.rect(30, by, 1, 14).fill({ color: 0x2a2a40 });
@@ -76,16 +80,20 @@ export class SceneDecorations {
 
     // ── Wall borders ────────────────────────────────────────────────────
     // Left wall
-    g.rect(0, 40, 22, 460).fill({ color: 0xe8d5c0 });
-    g.rect(0, 40, 4, 460).fill({ color: 0xc8b5a0 }); // dark corner shadow
+    g.rect(0, 40, 22, SCENE_H - 40).fill({ color: 0xe8d5c0 });
+    g.rect(0, 40, 4, SCENE_H - 40).fill({ color: 0xc8b5a0 }); // dark corner shadow
     // Bottom wall (baseboard)
-    g.rect(0, 480, 1200, 20).fill({ color: 0xe0c8b0 });
-    g.rect(0, 478, 1200, 3).fill({ color: 0xc0a890 }); // baseboard highlight
+    g.rect(0, SCENE_H - 20, SCENE_W, 20).fill({ color: 0xe0c8b0 });
+    g.rect(0, SCENE_H - 22, SCENE_W, 3).fill({ color: 0xc0a890 }); // baseboard highlight
 
     // ── Pendant ceiling lights (lampshade + bulb, focused glow) ──────────────
     const lightCenters = [
-      { x: 250, y: 120 }, { x: 550, y: 120 },
-      { x: 250, y: 300 }, { x: 550, y: 300 },
+      // Desk area
+      { x: 200, y: 120 }, { x: 550, y: 120 }, { x: 900, y: 120 },
+      { x: 200, y: 280 }, { x: 550, y: 280 },
+      { x: 200, y: 440 }, { x: 550, y: 440 }, { x: 900, y: 440 },
+      // Meeting room
+      { x: 1250, y: 200 }, { x: 1350, y: 200 },
     ];
     for (const lc of lightCenters) {
       // Chain
@@ -170,6 +178,43 @@ export class SceneDecorations {
     this.coffeeMachine.on('pointerdown', () => this.brewCoffee());
     this.container.addChild(this.coffeeMachine);
 
+    // ── Meeting room (top-right) ────────────────────────────────────────────
+    const mx = MEETING_X, my = MEETING_Y, mw = MEETING_W, mh = MEETING_H;
+    // Meeting room floor (slightly different shade)
+    g.rect(mx, my, mw, mh).fill({ color: 0xd8c8a8 });
+    // Meeting room walls (left wall)
+    g.rect(mx - 8, my - 20, 8, mh + 30).fill({ color: 0xe8d5c0 });
+    g.rect(mx - 8, my - 20, 4, mh + 30).fill({ color: 0xc8b5a0 });
+    // Meeting room top wall
+    g.rect(mx - 8, my - 20, mw + 8, 20).fill({ color: 0x3a3a50 });
+    // Meeting room bottom wall (partial)
+    g.rect(mx - 8, my + mh, mw + 8, 20).fill({ color: 0xe8d5c0 });
+    // Meeting table (large oval)
+    g.ellipse(mx + mw / 2, my + mh / 2, 100, 60).fill({ color: 0x8b6040 });
+    g.ellipse(mx + mw / 2, my + mh / 2, 96, 56).fill({ color: 0x9b7050 });
+    // Projector screen on wall
+    g.rect(mx + 40, my + 30, 160, 100).fill({ color: 0x333344 });
+    g.rect(mx + 42, my + 32, 156, 96).fill({ color: 0x4488aa, alpha: 0.3 });
+    // Meeting chairs around table
+    const chairPositions = [
+      { x: mx + mw / 2 - 120, y: my + mh / 2 - 20 },
+      { x: mx + mw / 2 + 120, y: my + mh / 2 - 20 },
+      { x: mx + mw / 2, y: my + mh / 2 - 80 },
+      { x: mx + mw / 2, y: my + mh / 2 + 60 },
+    ];
+    for (const cp of chairPositions) {
+      g.rect(cp.x - 15, cp.y - 8, 30, 16).fill({ color: 0x3a3a5c }); // seat
+      g.rect(cp.x - 12, cp.y - 20, 24, 14).fill({ color: 0x3a3a5c }); // back
+    }
+    // Meeting room label
+    const meetingLabel = new Text({
+      text: 'MEETING ROOM',
+      style: new TextStyle({ fontFamily: 'monospace', fontSize: 8, fill: 0x887766 }),
+    });
+    meetingLabel.anchor.set(0.5, 0);
+    meetingLabel.position.set(mx + mw / 2, my + mh - 20);
+    this.container.addChild(meetingLabel);
+
     // ── Bookshelf (left wall) ─────────────────────────────────────────────
     g.rect(20, 30, 20, 160).fill({ color: 0x5a3e2b });
     for (let shelf = 0; shelf < 4; shelf++) {
@@ -193,7 +238,7 @@ export class SceneDecorations {
     const hour = new Date().getHours();
     const isDaytime = hour >= 6 && hour < 20;
     const skyColor = isDaytime ? 0x87ceeb : 0x1a1a3a;
-    for (const winX of [160, 360, 560]) {
+    for (const winX of [160, 380, 600, 820]) {
       // Curtains (pixel style, both sides)
       // Left curtain
       g.moveTo(winX - 22, 0);
