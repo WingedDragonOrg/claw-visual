@@ -4,6 +4,7 @@ import { AgentSprite } from './AgentSprite';
 import { SceneDecorations } from './SceneDecorations';
 import { assignFixedSlots, SCENE_W, SCENE_H } from './SceneLayout';
 import { loadFurnitureSprites } from './FurnitureSprites';
+import { ParticleSystem } from './ParticleSystem';
 
 /** Callback when an agent sprite is clicked */
 export type AgentClickHandler = (agent: Agent, canvasX: number, canvasY: number) => void;
@@ -27,6 +28,7 @@ export class PixiApp {
   private dayNightTimer = 0;
   private onAgentClick: AgentClickHandler | null = null;
   private currentTheme: OfficeTheme = 'auto';
+  private particles!: ParticleSystem;
 
   // Zoom state
   private _scale = 1;
@@ -82,6 +84,10 @@ export class PixiApp {
     this.decorations = deco;
     world.addChild(deco.container);
 
+    // Particle system (above agents)
+    this.particles = new ParticleSystem();
+    world.addChild(this.particles.display);
+
     // Load and overlay Kenney furniture sprites
     loadFurnitureSprites().then(() => {
       deco.overlayFurnitureSprites();
@@ -105,6 +111,7 @@ export class PixiApp {
 
         for (const sprite of this.sprites.values()) sprite.tick(this.frame);
         this.decorations?.tick(this.elapsed, ticker.deltaTime);
+        this.particles.tick(ticker.deltaMS);
       } catch (err) {
         console.error('[PixiApp] tick error:', err);
       }
@@ -189,11 +196,13 @@ export class PixiApp {
     this.world.position.set(this._offsetX, this._offsetY);
   }
 
-  /** Highlight an agent briefly (for event feedback) */
+  /** Highlight an agent briefly with flash + particle burst */
   highlightAgent(agentId: string, durationMs = 1500) {
     const sprite = this.sprites.get(agentId);
     if (sprite) {
       sprite.flash(durationMs);
+      const pos = sprite.getPosition();
+      this.particles.spawn(pos.x, pos.y, 16, 0xffd700, 80, 0.9, 4);
     }
   }
 
