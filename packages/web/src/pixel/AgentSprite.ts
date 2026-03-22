@@ -108,6 +108,7 @@ export class AgentSprite {
   private highlightBox: Graphics | null = null;
   private isHovered = false;
   private targetScale = 1.0;
+  private flashTimer = 0;
 
   // Lerp target
   private targetX = 0;
@@ -265,6 +266,16 @@ export class AgentSprite {
     this.container.scale.x += (this.targetScale - this.container.scale.x) * 0.15;
     this.container.scale.y = this.container.scale.x;
 
+    // Flash animation (event feedback)
+    if (this.flashTimer > 0) {
+      this.flashTimer -= 1 / 60;
+      const t = Math.max(0, this.flashTimer);
+      const flashIntensity = Math.sin(t * Math.PI * 8) * t;
+      this.container.alpha = 1 + flashIntensity * 0.3;
+    } else {
+      this.container.alpha = 1;
+    }
+
     // Idle breathing animation for online agents at desk
     if (this.isAtDesk && this.agent.status !== 'offline' && this.animated) {
       this.breathePhase += 0.05;
@@ -281,6 +292,11 @@ export class AgentSprite {
     if (this.bubble) {
       this.bubble.tick(frame / 60);
     }
+  }
+
+  /** Flash highlight effect for event feedback */
+  flash(durationMs = 1500) {
+    this.flashTimer = durationMs / 1000;
   }
 
   /** Set target position; container lerps there over subsequent frames */
