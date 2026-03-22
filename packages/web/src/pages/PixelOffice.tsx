@@ -89,6 +89,7 @@ export function PixelOffice() {
   const [initError, setInitError] = useState<string | null>(null);
   const [popup, setPopup] = useState<{ agent: Agent; x: number; y: number } | null>(null);
   const [theme, setTheme] = useState<OfficeTheme>('auto');
+  const [isLoading, setIsLoading] = useState(true);
 
   // Apply theme to PixiApp
   useEffect(() => {
@@ -128,12 +129,14 @@ export function PixelOffice() {
 
     pixi.init(canvasRef.current)
       .then(() => {
+        setIsLoading(false);
         if (pendingAgentsRef.current) {
           pixi.updateAgents(pendingAgentsRef.current);
           pendingAgentsRef.current = null;
         }
       })
       .catch((err: unknown) => {
+        setIsLoading(false);
         const msg = err instanceof Error ? err.message : String(err);
         setInitError(msg);
       });
@@ -236,6 +239,56 @@ export function PixelOffice() {
               <span style={{ fontSize: 11, color: 'var(--pxo-text-dim)' }}>{initError}</span>
               <br />
               <a href="/" style={{ color: 'var(--pxo-accent-cyan)', fontSize: 12 }}>切换到团队总览 →</a>
+            </div>
+          )}
+
+          {/* Loading transition overlay */}
+          {isLoading && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              background: 'var(--pxo-bg)',
+              zIndex: 50,
+            }}>
+              <div style={{
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: 11,
+                color: 'var(--pxo-accent-cyan)',
+                letterSpacing: '4px',
+                textTransform: 'uppercase',
+                marginBottom: 20,
+                textShadow: 'var(--pxo-glow-cyan)',
+                animation: 'pxo-blink 1s step-end infinite',
+              }}>
+                ◈ INITIALIZING
+              </div>
+              {/* Loading bar */}
+              <div style={{
+                width: 160,
+                height: 2,
+                background: 'var(--pxo-border)',
+                position: 'relative',
+                overflow: 'hidden',
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: 0, left: '-100%',
+                  width: '100%', height: '100%',
+                  background: 'var(--pxo-accent-cyan)',
+                  boxShadow: '0 0 8px var(--pxo-accent-cyan)',
+                  animation: 'pxo-scan 1.2s linear infinite',
+                }} />
+              </div>
+              <style>{`
+                @keyframes pxo-scan {
+                  from { left: -100%; }
+                  to { left: 100%; }
+                }
+                @keyframes pxo-blink {
+                  0%, 100% { opacity: 1; }
+                  50% { opacity: 0.3; }
+                }
+              `}</style>
             </div>
           )}
 
