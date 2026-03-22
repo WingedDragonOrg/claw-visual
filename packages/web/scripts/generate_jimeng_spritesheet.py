@@ -19,6 +19,7 @@ OUT_DIR = "/home/ubuntu/claw-visual/packages/web/public/sprites"
 MCPORTER_BIN = "/home/ubuntu/.local/share/pnpm/mcporter"
 NODE_PATH = "/home/ubuntu/.local/share/pnpm/global/5/.pnpm/mcporter@0.7.3_hono@4.11.7/node_modules"
 BUN_BIN = "/home/ubuntu/.bun/bin/bun"
+NVM_SHELL = "/home/ubuntu/.nvm/nvm.sh"
 
 TARGET_W, TARGET_H = 256, 192
 FRAME_W, FRAME_H = 64, 64
@@ -36,6 +37,7 @@ def call_jimeng(prompt: str, aspect_ratio: str = "3:2") -> list[str]:
         "--output", "text"
     ]
     env = os.environ.copy()
+    env["NVM_DIR"] = "/home/ubuntu/.nvm"
     env["NODE_PATH"] = NODE_PATH
 
     result = subprocess.run(

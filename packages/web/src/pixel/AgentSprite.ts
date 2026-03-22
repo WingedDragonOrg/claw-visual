@@ -11,13 +11,11 @@ import { StatusBubble } from './SceneDecorations';
 // Sprite sheet registry
 // ──────────────────────────────────────────────
 const SPRITE_SHEETS: Record<string, string> = {
-  xiaoai:   '/sprites/agent-xiaoai.png',
+  xiaoai:   '/sprites/agent-xiaoai_ai.png',
   xiaochan: '/sprites/agent-xiaochan.png',
   xiaokai:  '/sprites/agent-xiaokai.png',
   xiaoqian: '/sprites/agent-xiaoqian-emoji.png',
   xiaohou:  '/sprites/agent-xiaohou-emoji.png',
-  xiaoai_ai:  '/sprites/agent-xiaoai_ai.png',
-  xiaohou_ai: '/sprites/agent-xiaohou_ai.png',
 };
 
 const FALLBACK_POOL = Object.values(SPRITE_SHEETS);
@@ -200,6 +198,8 @@ export class AgentSprite {
     if (name.includes('爱')) return 'xiaoai';
     if (name.includes('产') || name.includes('chan')) return 'xiaochan';
     if (name.includes('开') || name.includes('kai'))  return 'xiaokai';
+    if (name.includes('后') || name.includes('hou'))   return 'xiaohou';
+    if (name.includes('前') || name.includes('qian')) return 'xiaoqian';
     return agent.id.toLowerCase();
   }
 
