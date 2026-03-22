@@ -89,6 +89,7 @@ export function PixelOffice() {
   const [initError, setInitError] = useState<string | null>(null);
   const [popup, setPopup] = useState<{ agent: Agent; x: number; y: number } | null>(null);
   const [theme, setTheme] = useState<OfficeTheme>('auto');
+  const [soundMuted, setSoundMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Apply theme to PixiApp
@@ -97,6 +98,21 @@ export function PixelOffice() {
       pixiRef.current.setTheme(theme);
     }
   }, [theme]);
+
+  // Unlock audio on first interaction
+  useEffect(() => {
+    const unlock = () => {
+      pixiRef.current?.unlockAudio();
+      document.removeEventListener('pointerdown', unlock);
+    };
+    document.addEventListener('pointerdown', unlock);
+    return () => document.removeEventListener('pointerdown', unlock);
+  }, []);
+
+  // Apply sound mute
+  useEffect(() => {
+    pixiRef.current?.setSoundMuted(soundMuted);
+  }, [soundMuted]);
 
   const agentsFetcher = useCallback(() => fetchAgents(), []);
   const { data: agents, error } = usePolling<Agent[]>(agentsFetcher);
@@ -223,6 +239,14 @@ export function PixelOffice() {
               {THEME_LABELS[t]}
             </button>
           ))}
+          <button
+            className="pxo-theme-btn"
+            onClick={() => setSoundMuted((m) => !m)}
+            title={soundMuted ? '🔇 开启音效' : '🔊 关闭音效'}
+            style={{ marginLeft: 8 }}
+          >
+            {soundMuted ? '🔇' : '🔊'}
+          </button>
         </div>
       </div>
 
