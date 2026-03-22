@@ -135,6 +135,7 @@ export function PixelOffice() {
 
   // Gamification
   const prevGithubSummaryRef = useRef<GitHubSummary | undefined>(undefined);
+  const prevAgentStatusesRef = useRef<Map<string, string>>(new Map());
   const { leaderboard, tick, handleGitHubRefresh } = useGamification();
 
   // Close popup on outside click
@@ -173,6 +174,16 @@ export function PixelOffice() {
   useEffect(() => {
     if (!agents) return;
     if (pixiRef.current?.isReady()) {
+      // Flash agents whose status changed (event feedback animation)
+      const prev = prevAgentStatusesRef.current;
+      agents.forEach((agent) => {
+        const prevStatus = prev.get(agent.id);
+        if (prevStatus && prevStatus !== agent.status) {
+          pixiRef.current?.highlightAgent(agent.id);
+        }
+        prev.set(agent.id, agent.status);
+      });
+
       pixiRef.current.updateAgents(agents);
       tick(agents);
       // Update popup agent data if open
