@@ -1,145 +1,94 @@
 import { useState, useCallback, useRef } from 'react';
-import type { Agent, AgentStatus, GitHubSummary } from '../types';
+import type { Agent, AgentStatus } from '../types';
 
-interface AgentScore {
+export interface RankingEntry {
   agentId: string;
-  agentName: string;
+  name: string;
   score: number;
-  busyMinutes: number;
-  onlineMinutes: number;
-  errorMinutes: number;
-  issuesResolved: number;
-  lastUpdated: number;
-}
-
-export interface LeaderboardEntry extends AgentScore {
   rank: number;
   status: AgentStatus;
 }
 
 interface UseGamificationOptions {
-  /** Called when leaderboard data changes */
-  onUpdate?: (leaderboard: LeaderboardEntry[]) => void;
+  /** Points per 30s interval */
+  onlinePoints?: number;
+  busyPoints?: number;
+  errorPoints?: number;
+  onRankingsUpdate?: (rankings: RankingEntry[]) => void;
 }
 
-const SCORE_WEIGHTS: Record<AgentStatus, number> = {
-  busy: 2,
+const POINTS = {
   online: 1,
+  busy: 2,
+  error: 0,
   away: 0,
   offline: 0,
-  error: -1,
 };
 
-const ISSUE_POINTS = 5;
-
 export function useGamification(options: UseGamificationOptions = {}) {
-  const { onUpdate } = options;
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const scoresRef = useRef<Map<string, AgentScore>>(new Map());
-  const lastSeenIssuesRef = useRef<Map<string, number>>(new Map());
-  const lastTickRef = useRef<number>(Date.now());
+  const {
+    onlinePoints = POINTS.online,
+    busyPoints = POINTS.busy,
+    errorPoints = POINTS.error,
+    onRankingsUpdate,
+  } = options;
 
-  /** Accumulate points based on elapsed time and current agent states */
-  const tick = useCallback((agents: Agent[]) => {
-    const now = Date.now();
-    const elapsedMs = now - lastTickRef.current;
-    const elapsedMinutes = elapsedMs / 60000;
-    lastTickRef.current = now;
+  const [rankings, setRankings] = useState<RankingEntry[]>([]);
+  const scoresRef = useRef<Map<string, number>>(new Map());
+  const lastSeenRef = useRef<Map<string, AgentStatus>>(new Map());
 
+  /** Call on each agent-update event */
+  const onAgentUpdate = useCallback((agents: Agent[]) => {
     const scores = scoresRef.current;
 
     agents.forEach((agent) => {
-      const existing = scores.get(agent.id) || {
-        agentId: agent.id,
-        agentName: agent.name,
-        score: 0,
-        busyMinutes: 0,
-        onlineMinutes: 0,
-        errorMinutes: 0,
-        issuesResolved: 0,
-        lastUpdated: now,
-      };
+      const prevStatus = lastSeenRef.current.get(agent.id);
+      const prevScore = scores.get(agent.id) ?? 0;
 
-      const weight = SCORE_WEIGHTS[agent.status] || 0;
-      const earnedPoints = weight * elapsedMinutes;
-      const earnedMinutes = elapsedMinutes;
+      // Award points only when status is online/busy/error
+      let earned = 0;
+      if (agent.status === 'online') earned = onlinePoints;
+      else if (agent.status === 'busy') earned = busyPoints;
+      else if (agent.status === 'error') earned = errorPoints;
 
-      if (agent.status === 'busy') existing.busyMinutes += earnedMinutes;
-      if (agent.status === 'online') existing.onlineMinutes += earnedMinutes;
-      if (agent.status === 'error') existing.errorMinutes += earnedMinutes;
-
-      existing.score += earnedPoints;
-      existing.lastUpdated = now;
-      scores.set(agent.id, existing);
+      scores.set(agent.id, prevScore + earned);
+      lastSeenRef.current.set(agent.id, agent.status);
     });
 
-    // Sort by score descending
-    const sorted = [...scores.values()]
-      .sort((a, b) => b.score - a.score)
-      .map((s, i): LeaderboardEntry => {
-        const agent = agents.find((ag) => ag.id === s.agentId);
+    // Sort and build rankings
+    const sorted: RankingEntry[] = [...scores.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([agentId, score], index) => {
+        const agent = agents.find((ag) => ag.id === agentId);
         return {
-          ...s,
-          rank: i + 1,
+          agentId,
+          name: agent?.name ?? agentId,
+          score,
+          rank: index + 1,
           status: agent?.status ?? 'offline',
         };
       });
 
-    setLeaderboard(sorted);
-    onUpdate?.(sorted);
-  }, [onUpdate]);
+    setRankings(sorted);
+    onRankingsUpdate?.(sorted);
+  }, [onlinePoints, busyPoints, errorPoints, onRankingsUpdate]);
 
-  /** Award bonus points for resolving an issue */
-  const awardIssuePoints = useCallback((agentId: string) => {
-    const score = scoresRef.current.get(agentId);
-    if (score) {
-      score.score += ISSUE_POINTS;
-      score.issuesResolved += 1;
-    }
-  }, []);
-
-  /** Handle GitHub refresh - award points for resolved issues */
-  const handleGitHubRefresh = useCallback((summary: GitHubSummary, prevSummary?: GitHubSummary) => {
-    if (!prevSummary) {
-      // First load - seed last seen counts
-      Object.entries(summary.byAssignee ?? {}).forEach(([assignee, count]) => {
-        lastSeenIssuesRef.current.set(assignee, count);
-      });
-      return summary;
-    }
-
-    Object.entries(summary.byAssignee ?? {}).forEach(([assignee, count]) => {
-      const lastSeen = lastSeenIssuesRef.current.get(assignee) ?? 0;
-      if (count > lastSeen) {
-        // Agent closed issues
-        const delta = count - lastSeen;
-        for (let i = 0; i < delta; i++) {
-          awardIssuePoints(assignee);
-        }
-        lastSeenIssuesRef.current.set(assignee, count);
-      }
-    });
-
-    return summary;
-  }, [awardIssuePoints]);
-
-  /** Reset all scores */
-  const reset = useCallback(() => {
+  /** Reset daily rankings */
+  const resetDaily = useCallback(() => {
     scoresRef.current.clear();
-    lastTickRef.current = Date.now();
-    setLeaderboard([]);
+    lastSeenRef.current.clear();
+    setRankings([]);
   }, []);
 
-  /** Get score for a specific agent */
-  const getScore = useCallback((agentId: string): AgentScore | undefined => {
-    return scoresRef.current.get(agentId);
+  /** Get score for specific agent */
+  const getScore = useCallback((agentId: string): number => {
+    return scoresRef.current.get(agentId) ?? 0;
   }, []);
 
   return {
-    leaderboard,
-    tick,
-    handleGitHubRefresh,
-    reset,
+    rankings,
+    onAgentUpdate,
+    resetDaily,
     getScore,
   };
 }

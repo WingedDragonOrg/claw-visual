@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import type { LeaderboardEntry } from '../hooks/useGamification';
+import type { RankingEntry } from '../hooks/useGamification';
 
 interface LeaderboardProps {
-  entries: LeaderboardEntry[];
+  entries: RankingEntry[];
   onAgentClick?: (agentId: string) => void;
 }
 
-const MEDAL_COLORS = ['#ffd700', '#c0c0c0', '#cd7f32'];
+const MEDAL_EMOJIS = ['🥇', '🥈', '🥉'];
 const STATUS_COLORS: Record<string, string> = {
   online: '#22c55e',
   busy: '#f59e0b',
@@ -59,13 +59,13 @@ export function Leaderboard({ entries, onAgentClick }: LeaderboardProps) {
             >
               {/* Rank */}
               <span style={{
-                width: '24px',
+                width: '28px',
                 fontWeight: 700,
                 fontSize: '14px',
-                color: entry.rank <= 3 ? MEDAL_COLORS[entry.rank - 1] : 'var(--text-secondary)',
                 textAlign: 'center',
+                color: entry.rank <= 3 ? MEDAL_EMOJIS[entry.rank - 1] : 'var(--text-secondary)',
               }}>
-                {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : `#${entry.rank}`}
+                {entry.rank <= 3 ? MEDAL_EMOJIS[entry.rank - 1] : `#${entry.rank}`}
               </span>
 
               {/* Agent name */}
@@ -76,7 +76,7 @@ export function Leaderboard({ entries, onAgentClick }: LeaderboardProps) {
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }}>
-                {entry.agentName}
+                {entry.name}
               </span>
 
               {/* Status dot */}
@@ -91,11 +91,11 @@ export function Leaderboard({ entries, onAgentClick }: LeaderboardProps) {
               <span style={{
                 fontSize: '14px',
                 fontWeight: 700,
-                minWidth: '50px',
+                minWidth: '40px',
                 textAlign: 'right',
                 fontFamily: 'monospace',
               }}>
-                {Math.round(entry.score)}
+                {entry.score}
               </span>
             </div>
           ))}
