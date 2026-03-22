@@ -932,3 +932,88 @@ export class StatusBubble {
     this.container.destroy({ children: true });
   }
 }
+
+// ─── Speech Bubbles (for agent messages/activities) ─────────────────────────────
+export class SpeechBubble {
+  readonly container: Container;
+  private phase: number = 0;
+  private autoHideTimer = 0;
+  private autoHideMs = 0;
+  private graphics: Graphics;
+  private label: Text;
+
+  constructor() {
+    this.container = new Container();
+    this.graphics = new Graphics();
+    this.label = new Text({
+      text: '',
+      style: new TextStyle({
+        fontSize: 7,
+        fontFamily: 'monospace',
+        fill: 0xffffff,
+        align: 'center',
+        wordWrap: true,
+        wordWrapWidth: 80,
+      }),
+    });
+    this.label.anchor.set(0.5, 0.5);
+    this.container.addChild(this.graphics);
+    this.container.addChild(this.label);
+    this.container.visible = false;
+    this.container.zIndex = 100;
+  }
+
+  show(text: string, durationMs = 4000) {
+    this.label.text = text;
+    // Draw bubble background sized to text
+    const padding = 4;
+    const textBounds = this.label.getBounds();
+    const bw = Math.max(40, textBounds.width + padding * 2);
+    const bh = Math.max(20, textBounds.height + padding * 2);
+    this.graphics.clear();
+    // Pixel-art style rounded rect with dark bg
+    this.graphics.roundRect(-bw / 2, -bh / 2, bw, bh, 4).fill({ color: 0x1a1a2e, alpha: 0.95 });
+    this.graphics.roundRect(-bw / 2, -bh / 2, bw, bh, 4).stroke({ color: 0x4a4a6a, width: 1, alpha: 0.8 });
+    // Small tail pointing down
+    this.graphics.moveTo(-4, bh / 2 - 1);
+    this.graphics.lineTo(0, bh / 2 + 5);
+    this.graphics.lineTo(4, bh / 2 - 1);
+    this.graphics.closePath().fill({ color: 0x1a1a2e, alpha: 0.95 });
+
+    this.label.position.set(0, 0);
+    this.container.visible = true;
+    this.container.alpha = 1;
+    this.autoHideMs = durationMs;
+    this.autoHideTimer = 0;
+    this.phase = Math.random() * Math.PI * 2;
+  }
+
+  hide() {
+    this.container.visible = false;
+    this.label.text = '';
+  }
+
+  tick(elapsed: number) {
+    if (!this.container.visible) return;
+
+    // Auto-hide
+    this.autoHideTimer += 1 / 60 * 1000;
+    if (this.autoHideTimer >= this.autoHideMs) {
+      this.hide();
+      return;
+    }
+
+    // Fade out in last 20% of life
+    const fadeStart = this.autoHideMs * 0.8;
+    if (this.autoHideTimer > fadeStart) {
+      this.container.alpha = 1 - (this.autoHideTimer - fadeStart) / (this.autoHideMs - fadeStart);
+    }
+
+    // Float animation
+    this.container.y = Math.sin(elapsed * 2.8 + this.phase) * 3;
+  }
+
+  destroy() {
+    this.container.destroy({ children: true });
+  }
+}

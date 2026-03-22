@@ -5,7 +5,7 @@ import {
 import type { Agent } from '../types';
 import type { PixelState } from './types';
 import { STATUS_TO_PIXEL } from './types';
-import { StatusBubble } from './SceneDecorations';
+import { StatusBubble, SpeechBubble } from './SceneDecorations';
 
 // ──────────────────────────────────────────────
 // Sprite sheet registry
@@ -103,6 +103,7 @@ export class AgentSprite {
   private label: Text;
   private errorOverlay: Graphics | null = null;
   private bubble: StatusBubble | null = null;
+  private speechBubble: SpeechBubble | null = null;
   private currentState: PixelState;
   private agentKey: string;
   private tint: number | null;
@@ -121,6 +122,16 @@ export class AgentSprite {
   /** Returns agent's current world position */
   getPosition(): { x: number; y: number } {
     return { x: this.container.x + 32, y: this.container.y + 32 };
+  }
+
+  /** Show a speech bubble with the given text */
+  showSpeech(text: string, durationMs = 4000) {
+    if (!this.speechBubble) {
+      this.speechBubble = new SpeechBubble();
+      this.speechBubble.container.position.set(0, -50);
+      this.container.addChild(this.speechBubble.container);
+    }
+    this.speechBubble.show(text, durationMs);
   }
 
   constructor(agent: Agent, onClickCallback?: (agent: Agent, screenX: number, screenY: number) => void) {
@@ -301,6 +312,11 @@ export class AgentSprite {
     if (this.bubble) {
       this.bubble.tick(frame / 60);
     }
+
+    // Speech bubble tick
+    if (this.speechBubble) {
+      this.speechBubble.tick(frame / 60);
+    }
   }
 
   /** Flash highlight effect for event feedback */
@@ -368,6 +384,7 @@ export class AgentSprite {
   destroy() {
     this.destroyed = true;
     this.bubble?.destroy();
+    this.speechBubble?.destroy();
     this.container.destroy({ children: true });
   }
 }
