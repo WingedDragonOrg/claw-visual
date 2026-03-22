@@ -1,4 +1,4 @@
-import { Application, ColorMatrixFilter } from 'pixi.js';
+import { Application, ColorMatrixFilter, Container } from 'pixi.js';
 import type { Agent, GitHubSummary } from '../types';
 import { AgentSprite } from './AgentSprite';
 import { SceneDecorations } from './SceneDecorations';
@@ -12,6 +12,7 @@ export type OfficeTheme = 'auto' | 'day' | 'night' | 'dusk' | 'holiday';
 
 export class PixiApp {
   private app: Application | null = null;
+  private world: Container | null = null;   // pan/zoom container wrapping everything
   private sprites: Map<string, AgentSprite> = new Map();
   private decorations: SceneDecorations | null = null;
   private initialized = false;
@@ -23,9 +24,19 @@ export class PixiApp {
   private onAgentClick: AgentClickHandler | null = null;
   private currentTheme: OfficeTheme = 'auto';
 
+  // Zoom state
+  private _scale = 1;
+  private _offsetX = 0;
+  private _offsetY = 0;
+  private readonly MIN_SCALE = 0.5;
+  private readonly MAX_SCALE = 3;
+
   setClickHandler(handler: AgentClickHandler) {
     this.onAgentClick = handler;
   }
+
+  /** Current zoom scale */
+  get scale() { return this._scale; }
 
   async init(canvas: HTMLCanvasElement) {
     const app = new Application();
@@ -41,6 +52,12 @@ export class PixiApp {
     this.app = app;
     this.initialized = true;
 
+    // Pan/zoom world container
+    const world = new Container();
+    world.sortableChildren = true;
+    app.stage.addChild(world);
+    this.world = world;
+
     // Day/night color filter on the whole stage
     const filter = new ColorMatrixFilter();
     app.stage.filters = [filter];
@@ -50,7 +67,7 @@ export class PixiApp {
     // Decorations below agents
     const deco = new SceneDecorations();
     this.decorations = deco;
-    app.stage.addChild(deco.container);
+    world.addChild(deco.container);
 
     // Ticker
     app.ticker.add((ticker) => {
@@ -72,18 +89,112 @@ export class PixiApp {
       }
     });
 
+    // Pan state
+    let isPanning = false;
+    let panStartX = 0;
+    let panStartY = 0;
+    let offsetXAtPanStart = 0;
+    let offsetYAtPanStart = 0;
+
+    // Wheel zoom
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+      const newScale = Math.max(this.MIN_SCALE, Math.min(this.MAX_SCALE, this._scale * zoomFactor));
+      const scaleRatio = newScale / this._scale;
+
+      // Zoom toward mouse position
+      this._offsetX = mouseX - (mouseX - this._offsetX) * scaleRatio;
+      this._offsetY = mouseY - (mouseY - this._offsetY) * scaleRatio;
+      this._scale = newScale;
+      this.applyWorldTransform();
+    }, { passive: false });
+
+    // Pan via drag
+    canvas.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      isPanning = true;
+      panStartX = e.clientX;
+      panStartY = e.clientY;
+      offsetXAtPanStart = this._offsetX;
+      offsetYAtPanStart = this._offsetY;
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!isPanning) return;
+      this._offsetX = offsetXAtPanStart + (e.clientX - panStartX);
+      this._offsetY = offsetYAtPanStart + (e.clientY - panStartY);
+      this.applyWorldTransform();
+    });
+
+    canvas.addEventListener('pointerup', (e) => {
+      isPanning = false;
+    });
+
+    canvas.addEventListener('pointercancel', () => {
+      isPanning = false;
+    });
+
     // Responsive scale
     const applyScale = () => {
       if (!this.app || !canvas.parentElement) return;
       const containerW = canvas.parentElement.clientWidth || SCENE_W;
-      const scale = containerW / SCENE_W;
-      canvas.style.width = `${containerW}px`;
+      const containerH = canvas.parentElement.clientHeight || SCENE_H;
+      const scale = Math.min(containerW / SCENE_W, containerH / SCENE_H);
+      canvas.style.width = `${Math.round(SCENE_W * scale)}px`;
       canvas.style.height = `${Math.round(SCENE_H * scale)}px`;
+      // Re-center after resize
+      const canvasW = SCENE_W * scale;
+      const canvasH = SCENE_H * scale;
+      this._offsetX = (containerW - canvasW) / 2;
+      this._offsetY = (containerH - canvasH) / 2;
+      this._scale = scale;
+      this.applyWorldTransform();
     };
 
     applyScale();
     this.resizeObserver = new ResizeObserver(applyScale);
     if (canvas.parentElement) this.resizeObserver.observe(canvas.parentElement);
+  }
+
+  private applyWorldTransform() {
+    if (!this.world) return;
+    this.world.scale.set(this._scale);
+    this.world.position.set(this._offsetX, this._offsetY);
+  }
+
+  /** Reset pan and zoom to default */
+  resetView() {
+    if (!this.app) return;
+    const canvas = this.app.canvas as HTMLCanvasElement;
+    const containerW = canvas.parentElement?.clientWidth || SCENE_W;
+    const containerH = canvas.parentElement?.clientHeight || SCENE_H;
+    const scale = Math.min(containerW / SCENE_W, containerH / SCENE_H);
+    const canvasW = SCENE_W * scale;
+    const canvasH = SCENE_H * scale;
+    this._offsetX = (containerW - canvasW) / 2;
+    this._offsetY = (containerH - canvasH) / 2;
+    this._scale = scale;
+    this.applyWorldTransform();
+  }
+
+  /** Set zoom scale directly (1 = default fit-to-container) */
+  setScale(scale: number) {
+    if (!this.app) return;
+    this._scale = Math.max(this.MIN_SCALE, Math.min(this.MAX_SCALE, scale));
+    const canvas = this.app.canvas as HTMLCanvasElement;
+    const containerW = canvas.parentElement?.clientWidth || SCENE_W;
+    const containerH = canvas.parentElement?.clientHeight || SCENE_H;
+    const canvasW = SCENE_W * this._scale;
+    const canvasH = SCENE_H * this._scale;
+    this._offsetX = (containerW - canvasW) / 2;
+    this._offsetY = (containerH - canvasH) / 2;
+    this.applyWorldTransform();
   }
 
   private applyDayNight() {
@@ -141,8 +252,7 @@ export class PixiApp {
   }
 
   updateAgents(agents: Agent[]) {
-    if (!this.app || !this.initialized) return;
-    const stage = this.app.stage;
+    if (!this.app || !this.initialized || !this.world) return;
 
     const statuses = agents.map((a) => a.status);
     const slots = assignFixedSlots(agents.length, statuses);
@@ -155,12 +265,12 @@ export class PixiApp {
       const clickHandler = this.onAgentClick
         ? (ag: Agent, cx: number, cy: number) => {
             if (!this.app) return;
-            // Convert PixiJS global coords → CSS coords on canvas element
             const canvas = this.app.canvas as HTMLCanvasElement;
-            const scaleX = canvas.clientWidth / SCENE_W;
-            const scaleY = canvas.clientHeight / SCENE_H;
             const rect = canvas.getBoundingClientRect();
-            this.onAgentClick!(ag, rect.left + cx * scaleX, rect.top + cy * scaleY);
+            // Convert from world coordinates (logical slot pos) to CSS canvas coords
+            const cssX = this._offsetX + cx * this._scale;
+            const cssY = this._offsetY + cy * this._scale;
+            this.onAgentClick!(ag, rect.left + cssX, rect.top + cssY);
           }
         : undefined;
 
@@ -171,7 +281,7 @@ export class PixiApp {
       } else {
         const sprite = new AgentSprite(agent, clickHandler);
         sprite.moveTo(slot.x, slot.y, slot.area === 'desk');
-        stage.addChild(sprite.container);
+        this.world!.addChild(sprite.container);
         this.sprites.set(agent.id, sprite);
       }
 
@@ -201,7 +311,8 @@ export class PixiApp {
     if (!this.app) return;
     for (const sprite of this.sprites.values()) sprite.destroy();
     this.sprites.clear();
-    this.decorations?.container.destroy({ children: true });
+    this.world?.destroy({ children: true });
+    this.world = null;
     this.decorations = null;
     this.app.destroy();
     this.app = null;
