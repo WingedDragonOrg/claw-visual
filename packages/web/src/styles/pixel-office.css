@@ -1,0 +1,319 @@
+/* ─── PixelOffice Retro-Futuristic Terminal Theme ─────────────────────────── */
+
+.pxo-root {
+  /* Neon terminal palette */
+  --pxo-bg: #0a0a0f;
+  --pxo-surface: #0f0f1a;
+  --pxo-border: #1a1a2e;
+  --pxo-border-glow: #00ffcc22;
+  --pxo-text: #e0e0e8;
+  --pxo-text-dim: #5a5a6e;
+  --pxo-accent-cyan: #00ffcc;
+  --pxo-accent-magenta: #ff00aa;
+  --pxo-accent-amber: #ffaa00;
+  --pxo-accent-cyan-soft: rgba(0,255,204,0.1);
+  --pxo-glow-cyan: 0 0 8px rgba(0,255,204,0.4), 0 0 20px rgba(0,255,204,0.15);
+  --pxo-glow-magenta: 0 0 8px rgba(255,0,170,0.4), 0 0 20px rgba(255,0,170,0.15);
+
+  /* Scanline overlay texture */
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+  background-color: var(--pxo-bg);
+  min-height: 100vh;
+}
+
+/* ─── Header Bar ──────────────────────────────────────────────────────────── */
+
+.pxo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--pxo-border);
+  background: var(--pxo-surface);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pxo-title {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--pxo-accent-cyan);
+  text-shadow: var(--pxo-glow-cyan);
+  margin: 0;
+}
+
+.pxo-title-glyph {
+  display: inline-block;
+  margin-right: 8px;
+  animation: pxo-pulse 2s ease-in-out infinite;
+}
+
+@keyframes pxo-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.pxo-stats {
+  display: flex;
+  gap: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--pxo-text-dim);
+}
+
+.pxo-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pxo-stat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pxo-accent-cyan);
+  box-shadow: var(--pxo-glow-cyan);
+}
+
+.pxo-stat-dot--amber {
+  background: var(--pxo-accent-amber);
+  box-shadow: 0 0 8px rgba(255,170,0,0.4);
+}
+
+.pxo-stat-value {
+  color: var(--pxo-text);
+  font-weight: 600;
+}
+
+/* ─── Theme Switcher ─────────────────────────────────────────────────────── */
+
+.pxo-theme-switcher {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.pxo-theme-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--pxo-text-dim);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+
+.pxo-theme-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 5px 10px;
+  border: 1px solid var(--pxo-border);
+  background: transparent;
+  color: var(--pxo-text-dim);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+}
+
+.pxo-theme-btn:hover {
+  border-color: var(--pxo-accent-cyan);
+  color: var(--pxo-accent-cyan);
+}
+
+.pxo-theme-btn--active {
+  border-color: var(--pxo-accent-cyan);
+  color: var(--pxo-accent-cyan);
+  background: var(--pxo-accent-cyan-soft);
+  box-shadow: var(--pxo-glow-cyan);
+}
+
+/* ─── Canvas Container ────────────────────────────────────────────────────── */
+
+.pxo-canvas-wrap {
+  position: relative;
+  border: 1px solid var(--pxo-border);
+  overflow: hidden;
+  /* Neon border glow on hover */
+  transition: border-color 0.3s ease;
+}
+
+.pxo-canvas-wrap:hover {
+  border-color: var(--pxo-accent-cyan);
+  box-shadow: inset 0 0 30px rgba(0,255,204,0.03);
+}
+
+.pxo-canvas-wrap::before {
+  /* Corner decorations */
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+  background:
+    linear-gradient(135deg, var(--pxo-accent-cyan) 0%, transparent 3%) top left,
+    linear-gradient(225deg, var(--pxo-accent-cyan) 0%, transparent 3%) top right,
+    linear-gradient(315deg, var(--pxo-accent-magenta) 0%, transparent 3%) bottom right,
+    linear-gradient(45deg, var(--pxo-accent-magenta) 0%, transparent 3%) bottom left;
+  background-size: 20px 20px;
+  background-repeat: no-repeat;
+  opacity: 0.4;
+}
+
+/* ─── Agent Popup ────────────────────────────────────────────────────────── */
+
+.pxo-popup {
+  position: fixed;
+  z-index: 300;
+  width: 240px;
+  background: var(--pxo-surface);
+  border: 2px solid var(--pxo-accent-cyan);
+  box-shadow: var(--pxo-glow-cyan), 8px 8px 0 rgba(0,0,0,0.6);
+  padding: 14px 16px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.pxo-popup::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 3px,
+    rgba(0,255,204,0.02) 3px, rgba(0,255,204,0.02) 4px
+  );
+  pointer-events: none;
+}
+
+.pxo-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--pxo-border);
+}
+
+.pxo-popup-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pxo-text);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.pxo-popup-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pxo-popup-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.pxo-popup-stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  padding: 3px 0;
+  color: var(--pxo-text-dim);
+}
+
+.pxo-popup-stat-value {
+  color: var(--pxo-text);
+  font-weight: 600;
+}
+
+.pxo-popup-close {
+  background: none;
+  border: 1px solid var(--pxo-border);
+  color: var(--pxo-text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 6px;
+  transition: all 0.15s;
+}
+
+.pxo-popup-close:hover {
+  border-color: var(--pxo-accent-magenta);
+  color: var(--pxo-accent-magenta);
+}
+
+/* ─── Leaderboard Override ───────────────────────────────────────────────── */
+
+.pxo-leaderboard {
+  background: var(--pxo-surface) !important;
+  border: 1px solid var(--pxo-border) !important;
+  border-radius: 0 !important;
+}
+
+.pxo-leaderboard-header {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
+  color: var(--pxo-accent-amber) !important;
+  text-shadow: 0 0 8px rgba(255,170,0,0.4);
+}
+
+.pxo-leaderboard-entry {
+  border-bottom: 1px solid var(--pxo-border) !important;
+  transition: background 0.15s;
+}
+
+.pxo-leaderboard-entry:hover {
+  background: var(--pxo-accent-cyan-soft) !important;
+}
+
+.pxo-leaderboard-rank {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-weight: 700 !important;
+}
+
+.pxo-leaderboard-score {
+  font-family: 'JetBrains Mono', monospace !important;
+  color: var(--pxo-accent-cyan) !important;
+  text-shadow: 0 0 6px rgba(0,255,204,0.3);
+}
+
+/* ─── Error / Warning States ─────────────────────────────────────────────── */
+
+.pxo-error {
+  border-left: 3px solid var(--pxo-accent-magenta);
+  background: rgba(255,0,170,0.06);
+  padding: 10px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--pxo-text);
+}
+
+/* ─── Layout Spacing ─────────────────────────────────────────────────────── */
+
+.pxo-body {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .pxo-body {
+    grid-template-columns: 1fr;
+  }
+}

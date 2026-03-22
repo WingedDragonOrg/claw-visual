@@ -41,69 +41,39 @@ function AgentPopup({ agent, x, y, onClose }: AgentPopupProps) {
 
   return (
     <div
+      className="pxo-popup"
       onClick={(e) => e.stopPropagation()}
-      style={{
-        position: 'fixed',
-        left: safeX,
-        top: safeY,
-        zIndex: 300,
-        width: popupW,
-        background: 'rgba(12,12,26,0.96)',
-        border: '3px solid #6b5a4a',
-        borderRadius: 0, // pixel style = no rounded corners
-        padding: '14px 16px',
-        backdropFilter: 'blur(10px)',
-        boxShadow: '4px 4px 0 #3a3a50, 0 8px 24px rgba(0,0,0,0.5)',
-        fontSize: 13,
-        color: 'var(--text-primary)',
-        imageRendering: 'pixelated',
-      }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+      <div className="pxo-popup-header">
         <div>
-          <div style={{
-            fontWeight: 600,
-            fontSize: 15,
-            marginBottom: 3,
-            fontFamily: 'monospace', // pixel font feel
-            letterSpacing: '0.5px',
-          }}>{displayName}</div>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5,
-            fontSize: 12, color,
-          }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, display: 'inline-block' }} />
-            {label}
-          </span>
+          <div className="pxo-popup-name">{displayName}</div>
+          <div className="pxo-popup-status">
+            <span className="pxo-popup-status-dot" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
+            <span style={{ color }}>{label}</span>
+          </div>
         </div>
-        <button
-          onClick={onClose}
-          style={{
-            background: 'none', border: 'none', color: 'var(--text-muted)',
-            cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 2px',
-          }}
-        >
-          ×
-        </button>
+        <button className="pxo-popup-close" onClick={onClose}>×</button>
       </div>
 
       {agent.lastSeen && (
-        <div style={{ color: 'var(--text-secondary)', fontSize: 11, marginBottom: 6 }}>
+        <div style={{ color: 'var(--pxo-text-dim)', fontSize: 11, marginBottom: 8 }}>
           最近活跃：{agent.lastSeen}
         </div>
       )}
 
       {agent.role && (
         <div style={{
-          background: 'rgba(255,255,255,0.05)', borderRadius: 6,
-          padding: '6px 10px', fontSize: 12, marginBottom: 6, color: 'var(--text-secondary)',
+          background: 'rgba(0,255,204,0.04)',
+          border: '1px solid var(--pxo-border)',
+          padding: '6px 10px', fontSize: 12, marginBottom: 8,
+          color: 'var(--pxo-text-dim)',
         }}>
           {agent.role}
         </div>
       )}
 
       {agent.issueCount !== undefined && agent.issueCount > 0 && (
-        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
+        <div style={{ fontSize: 12, color: 'var(--pxo-accent-amber)' }}>
           📋 {agent.issueCount} 个待处理 Issue
         </div>
       )}
@@ -213,40 +183,39 @@ export function PixelOffice() {
     prevGithubSummaryRef.current = githubSummary;
   }, [githubSummary]);
 
+  const onlineCount = agents?.filter((a) => a.status !== 'offline' && a.status !== 'error').length ?? 0;
+
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-          <h2 className="section-title" style={{
-            margin: 0,
-            fontFamily: 'monospace',
-            letterSpacing: '1px',
-            textShadow: '2px 2px 0 #3a3a50',
-          }}>🎮 像素办公室</h2>
-          {agents && (
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              {agents.length} agents · 在线 {agents.filter((a) => a.status === 'online' || a.status === 'busy').length}
-            </span>
-          )}
+    <div className="pxo-root">
+      {/* ── Header ────────────────────────────────────────────────────────── */}
+      <div className="pxo-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <h2 className="pxo-title">
+            <span className="pxo-title-glyph">◈</span>
+            像素办公室
+          </h2>
+          <div className="pxo-stats">
+            <div className="pxo-stat">
+              <span className="pxo-stat-dot" />
+              <span className="pxo-stat-value">{onlineCount}</span>
+              <span>/{agents?.length ?? 0} 在线</span>
+            </div>
+            <div className="pxo-stat">
+              <span className="pxo-stat-dot pxo-stat-dot--amber" />
+              <span>PTS: </span>
+              <span className="pxo-stat-value">{leaderboard[0]?.score ?? 0}</span>
+            </div>
+          </div>
         </div>
 
         {/* Theme Switcher */}
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>主题：</span>
+        <div className="pxo-theme-switcher">
+          <span className="pxo-theme-label">THEME</span>
           {(Object.keys(THEME_LABELS) as OfficeTheme[]).map((t) => (
             <button
               key={t}
               onClick={() => setTheme(t)}
-              style={{
-                padding: '4px 10px',
-                fontSize: 12,
-                border: theme === t ? '1px solid var(--accent)' : '1px solid var(--glass-border)',
-                borderRadius: 4,
-                background: theme === t ? 'var(--accent-soft)' : 'transparent',
-                color: theme === t ? 'var(--accent)' : 'var(--text-secondary)',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
+              className={`pxo-theme-btn${theme === t ? ' pxo-theme-btn--active' : ''}`}
             >
               {THEME_LABELS[t]}
             </button>
@@ -254,72 +223,76 @@ export function PixelOffice() {
         </div>
       </div>
 
-      {error && <div className="error-msg">数据加载失败：{error}</div>}
+      {/* ── Body ──────────────────────────────────────────────────────────── */}
+      <div className="pxo-body">
+        {/* Left: Canvas */}
+        <div>
+          {error && <div className="pxo-error">数据加载失败：{error}</div>}
 
-      {initError && (
-        <div className="error-msg" style={{ marginBottom: 12 }}>
-          ⚠️ 像素引擎初始化失败（可能不支持 WebGL）
-          <br />
-          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{initError}</span>
-          <br />
-          <a href="/" style={{ color: 'var(--accent)', fontSize: 12 }}>切换到团队总览 →</a>
+          {initError && (
+            <div className="pxo-error" style={{ marginBottom: 12 }}>
+              ⚠️ 像素引擎初始化失败（可能不支持 WebGL）
+              <br />
+              <span style={{ fontSize: 11, color: 'var(--pxo-text-dim)' }}>{initError}</span>
+              <br />
+              <a href="/" style={{ color: 'var(--pxo-accent-cyan)', fontSize: 12 }}>切换到团队总览 →</a>
+            </div>
+          )}
+
+          {!initError && (
+            <div className="pxo-canvas-wrap">
+              <canvas
+                ref={canvasRef}
+                style={{ display: 'block', imageRendering: 'pixelated', cursor: 'grab' }}
+              />
+              {/* Zoom controls */}
+              <div style={{
+                position: 'absolute', bottom: 8, right: 8,
+                display: 'flex', gap: 4, alignItems: 'center',
+                background: 'rgba(10,10,15,0.85)',
+                border: '1px solid var(--pxo-border)',
+                padding: '4px 8px',
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: 11,
+                color: 'var(--pxo-text-dim)',
+              }}>
+                <button
+                  onClick={() => pixiRef.current?.setScale((pixiRef.current as any)._scale * 0.9)}
+                  style={{ background: 'none', border: 'none', color: 'var(--pxo-text-dim)', cursor: 'pointer', fontSize: 14, padding: '0 4px' }}
+                  title="缩小"
+                >−</button>
+                <span style={{ minWidth: 36, textAlign: 'center' }}>
+                  {Math.round((pixiRef.current as any)?._scale * 100)}%
+                </span>
+                <button
+                  onClick={() => pixiRef.current?.setScale((pixiRef.current as any)._scale * 1.1)}
+                  style={{ background: 'none', border: 'none', color: 'var(--pxo-text-dim)', cursor: 'pointer', fontSize: 14, padding: '0 4px' }}
+                  title="放大"
+                >+</button>
+                <span style={{ borderLeft: '1px solid var(--pxo-border)', marginLeft: 4, paddingLeft: 8 }}>
+                  <button
+                    onClick={() => pixiRef.current?.resetView()}
+                    style={{ background: 'none', border: 'none', color: 'var(--pxo-text-dim)', cursor: 'pointer', fontSize: 10 }}
+                    title="重置视图"
+                  >RESET</button>
+                </span>
+              </div>
+            </div>
+          )}
         </div>
-      )}
 
-      {!initError && (
-        <div
-          style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--glass-border)', position: 'relative' }}
-        >
-          <canvas
-            ref={canvasRef}
-            style={{ display: 'block', imageRendering: 'pixelated', cursor: 'grab' }}
+        {/* Right: Leaderboard */}
+        <div>
+          <Leaderboard
+            entries={leaderboard}
+            onAgentClick={(agentId) => {
+              pixiRef.current?.highlightAgent(agentId);
+              const agent = agents?.find((a) => a.id === agentId);
+              if (agent) setPopup({ agent, x: window.innerWidth / 2, y: window.innerHeight / 2 });
+            }}
           />
-          {/* Zoom controls */}
-          <div style={{
-            position: 'absolute', bottom: 8, right: 8,
-            display: 'flex', gap: 4, alignItems: 'center',
-            background: 'rgba(12,12,26,0.8)',
-            border: '1px solid var(--glass-border)',
-            borderRadius: 8,
-            padding: '4px 8px',
-          }}>
-            <button
-              onClick={() => pixiRef.current?.setScale((pixiRef.current as any)._scale * 0.9)}
-              style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}
-              title="缩小"
-            >−</button>
-            <span style={{ fontSize: 11, color: '#888', minWidth: 36, textAlign: 'center' }}>
-              {Math.round((pixiRef.current as any)?._scale * 100)}%
-            </span>
-            <button
-              onClick={() => pixiRef.current?.setScale((pixiRef.current as any)._scale * 1.1)}
-              style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}
-              title="放大"
-            >+</button>
-            <button
-              onClick={() => pixiRef.current?.resetView()}
-              style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 11, padding: '0 4px', borderLeft: '1px solid #333', marginLeft: 2 }}
-              title="重置视图"
-            >重置</button>
-          </div>
-
-          {/* Leaderboard overlay */}
-          <div style={{
-            position: 'absolute', bottom: 8, left: 8,
-            width: 220,
-          }}>
-            <Leaderboard
-              entries={leaderboard}
-              onAgentClick={(agentId) => {
-                // Highlight agent in PixiApp
-                pixiRef.current?.highlightAgent(agentId);
-                const agent = agents?.find((a) => a.id === agentId);
-                if (agent) setPopup({ agent, x: window.innerWidth / 2, y: window.innerHeight / 2 });
-              }}
-            />
-          </div>
         </div>
-      )}
+      </div>
 
       {popup && (
         <AgentPopup

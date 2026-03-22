@@ -19,25 +19,21 @@ export function Leaderboard({ entries, onAgentClick }: LeaderboardProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="leaderboard" style={{
-      background: 'var(--glass-bg)',
-      border: '1px solid var(--glass-border)',
-      borderRadius: '8px',
-      overflow: 'hidden',
-    }}>
+    <div className="pxo-leaderboard">
       <div
         onClick={() => setCollapsed(!collapsed)}
+        className="pxo-leaderboard-header"
         style={{
           padding: '12px 16px',
           cursor: 'pointer',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: collapsed ? 'none' : '1px solid var(--glass-border)',
+          borderBottom: collapsed ? 'none' : '1px solid var(--pxo-border)',
         }}
       >
-        <span style={{ fontWeight: 600, fontSize: '14px' }}>🏆 积分榜</span>
-        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+        <span>◈ LEADERBOARD</span>
+        <span style={{ fontSize: '11px', color: 'var(--pxo-text-dim)' }}>
           {collapsed ? '▶' : '▼'}
         </span>
       </div>
@@ -48,25 +44,27 @@ export function Leaderboard({ entries, onAgentClick }: LeaderboardProps) {
             <div
               key={entry.agentId}
               onClick={() => onAgentClick?.(entry.agentId)}
+              className="pxo-leaderboard-entry"
               style={{
                 padding: '8px 16px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
                 cursor: onAgentClick ? 'pointer' : 'default',
-                borderBottom: '1px solid var(--glass-border)',
+                borderBottom: '1px solid var(--pxo-border)',
                 minHeight: '36px',
                 boxSizing: 'border-box',
               }}
             >
               {/* Rank */}
-              <span style={{
-                width: '24px',
-                fontWeight: 700,
-                fontSize: '14px',
-                color: entry.rank <= 3 ? MEDAL_COLORS[entry.rank - 1] : 'var(--text-secondary)',
-                textAlign: 'center',
-              }}>
+              <span
+                className="pxo-leaderboard-rank"
+                style={{
+                  width: '24px',
+                  fontSize: entry.rank <= 3 ? '16px' : '12px',
+                  textAlign: 'center',
+                }}
+              >
                 {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : `#${entry.rank}`}
               </span>
 
@@ -74,30 +72,32 @@ export function Leaderboard({ entries, onAgentClick }: LeaderboardProps) {
               <span style={{
                 flex: 1,
                 minWidth: 0,
-                fontSize: '13px',
+                fontSize: '12px',
+                fontFamily: 'JetBrains Mono, monospace',
                 lineHeight: '20px',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
+                color: 'var(--pxo-text)',
               }}>
                 {entry.agentName}
               </span>
 
               {/* Status dot */}
               <span style={{
-                width: '8px',
-                height: '8px',
+                width: '6px',
+                height: '6px',
                 borderRadius: '50%',
                 background: STATUS_COLORS[entry.status] ?? '#64748b',
+                boxShadow: `0 0 4px ${STATUS_COLORS[entry.status] ?? '#64748b'}`,
               }} />
 
               {/* Score */}
-              <span style={{
-                fontSize: '14px',
+              <span className="pxo-leaderboard-score" style={{
+                fontSize: '13px',
                 fontWeight: 700,
                 minWidth: '50px',
                 textAlign: 'right',
-                fontFamily: 'monospace',
               }}>
                 {Math.round(entry.score)}
               </span>
@@ -108,8 +108,9 @@ export function Leaderboard({ entries, onAgentClick }: LeaderboardProps) {
             <div style={{
               padding: '24px',
               textAlign: 'center',
-              color: 'var(--text-secondary)',
-              fontSize: '13px',
+              color: 'var(--pxo-text-dim)',
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: '12px',
             }}>
               暂无数据
             </div>
