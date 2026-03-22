@@ -1,0 +1,26 @@
+[Unit]
+Description=claw-visual Server
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/apps/claw-visual/packages/server
+Environment=NODE_ENV=production
+EnvironmentFile=/home/ubuntu/apps/claw-visual/.env
+ExecStart=/home/ubuntu/.bun/bin/bun src/index.ts
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=claw-visual
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/ubuntu/apps/claw-visual/packages/server
+ReadWritePaths=/home/ubuntu/.openclaw
+
+[Install]
+WantedBy=multi-user.target
