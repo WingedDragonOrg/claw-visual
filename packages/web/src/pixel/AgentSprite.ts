@@ -12,7 +12,7 @@ import { StatusBubble } from './SceneDecorations';
 // ──────────────────────────────────────────────
 const SPRITE_SHEETS: Record<string, string> = {
   xiaoai:   '/sprites/agent-xiaoai_ai.png',
-  xiaochan: '/sprites/agent-xiaochan.png',
+  xiaochan: '/sprites/agent-xiaochan_ai.png',
   xiaokai:  '/sprites/agent-xiaokai_ai.png',
   xiaoqian: '/sprites/agent-xiaoqian_ai.png',
   xiaohou:  '/sprites/agent-xiaohou_ai.png',
