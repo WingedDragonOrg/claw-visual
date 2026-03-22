@@ -312,6 +312,13 @@ export class AgentSprite {
     });
   }
 
+  /** Permanently highlight this agent (e.g. from leaderboard click) */
+  setHighlight(highlighted: boolean) {
+    if (this.highlightBox) {
+      this.highlightBox.alpha = highlighted ? 0.6 : 0;
+    }
+  }
+
   setState(agent: Agent) {
     const newState = STATUS_TO_PIXEL[agent.status];
     const changed = this.currentState !== newState || agent.status !== this.agent.status;

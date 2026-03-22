@@ -31,6 +31,9 @@ export class PixiApp {
   private readonly MIN_SCALE = 0.5;
   private readonly MAX_SCALE = 3;
 
+  // Highlight state (for leaderboard interaction)
+  private _highlightedAgentId: string | null = null;
+
   setClickHandler(handler: AgentClickHandler) {
     this.onAgentClick = handler;
   }
@@ -181,6 +184,21 @@ export class PixiApp {
     this._offsetY = (containerH - canvasH) / 2;
     this._scale = scale;
     this.applyWorldTransform();
+  }
+
+  /** Highlight an agent by id (e.g. from leaderboard click) */
+  highlightAgent(agentId: string | null) {
+    // Remove highlight from previous
+    if (this._highlightedAgentId) {
+      const prev = this.sprites.get(this._highlightedAgentId);
+      if (prev) prev.setHighlight(false);
+    }
+    // Apply highlight to new
+    if (agentId) {
+      const sprite = this.sprites.get(agentId);
+      if (sprite) sprite.setHighlight(true);
+    }
+    this._highlightedAgentId = agentId;
   }
 
   /** Set zoom scale directly (1 = default fit-to-container) */

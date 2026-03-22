@@ -1,6 +1,8 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { fetchAgents, fetchIssues } from '../api';
 import { usePolling } from '../hooks';
+import { useGamification } from '../hooks/useGamification';
+import { Leaderboard } from '../components/Leaderboard';
 import { PixiApp, type OfficeTheme } from '../pixel/PixiApp';
 import type { Agent, GitHubSummary } from '../types';
 
@@ -130,6 +132,16 @@ export function PixelOffice() {
 
   const issuesFetcher = useCallback(() => fetchIssues(), []);
   const { data: githubSummary } = usePolling<GitHubSummary>(issuesFetcher);
+
+  // Gamification: track scores and rankings
+  const { rankings, onAgentUpdate } = useGamification({
+    onRankingsUpdate: () => {}, // rankings are returned directly
+  });
+
+  // Feed agent updates to gamification hook
+  useEffect(() => {
+    if (agents) onAgentUpdate(agents);
+  }, [agents, onAgentUpdate]);
 
   // Close popup on outside click
   useEffect(() => {
@@ -276,6 +288,16 @@ export function PixelOffice() {
               title="重置视图"
             >重置</button>
           </div>
+
+          {/* Leaderboard */}
+          {rankings.length > 0 && (
+            <div style={{ marginTop: 8 }}>
+              <Leaderboard
+                entries={rankings}
+                onAgentClick={(agentId) => pixiRef.current?.highlightAgent(agentId)}
+              />
+            </div>
+          )}
         </div>
       )}
 
