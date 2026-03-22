@@ -312,6 +312,55 @@ export class SceneDecorations {
     g.rect(flx - 10, fly - 10, 20, 10).fill({ color: 0xffe8a0 }); // shade
     g.ellipse(flx, fly + 10, 40, 25).fill({ color: 0xffeeaa, alpha: 0.08 }); // glow
 
+    // ── Motivational posters on wall ────────────────────────────────────────
+    // Poster 1 - "SHIP IT"
+    g.rect(300, 5, 50, 30).fill({ color: 0x2a3a2a });
+    g.rect(301, 6, 48, 28).fill({ color: 0x1a2a1a });
+    const shipText = new Text({ text: '🚀', style: new TextStyle({ fontSize: 14 }) });
+    shipText.anchor.set(0.5, 0.5);
+    shipText.position.set(325, 15);
+    this.container.addChild(shipText);
+
+    // Poster 2 - "PING"
+    g.rect(500, 5, 50, 30).fill({ color: 0x2a2a3a });
+    g.rect(501, 6, 48, 28).fill({ color: 0x1a1a2a });
+    const pingText = new Text({ text: '📡', style: new TextStyle({ fontSize: 14 }) });
+    pingText.anchor.set(0.5, 0.5);
+    pingText.position.set(525, 15);
+    this.container.addChild(pingText);
+
+    // ── Filing cabinet (left wall) ─────────────────────────────────────────
+    const fcX = 2, fcY = SCENE_H - 80;
+    g.rect(fcX, fcY, 18, 60).fill({ color: 0x8899aa });
+    g.rect(fcX + 1, fcY + 1, 16, 19).fill({ color: 0x7788aa }); // drawer 1
+    g.rect(fcX + 1, fcY + 20, 16, 19).fill({ color: 0x7788aa }); // drawer 2
+    g.rect(fcX + 1, fcY + 39, 16, 19).fill({ color: 0x7788aa }); // drawer 3
+    // Drawer handles
+    g.rect(fcX + 7, fcY + 8, 4, 2).fill({ color: 0x556677 });
+    g.rect(fcX + 7, fcY + 27, 4, 2).fill({ color: 0x556677 });
+    g.rect(fcX + 7, fcY + 46, 4, 2).fill({ color: 0x556677 });
+
+    // ── Desk organizers (on some desks) ────────────────────────────────────
+    const organizerSlots = [0, 2, 4, 6]; // Only on half the desks
+    for (const idx of organizerSlots) {
+      const slot = DESK_SLOTS[idx];
+      if (!slot) continue;
+      const ox = slot.x + 20, oy = slot.y - 10;
+      // Pen holder
+      g.rect(ox, oy, 6, 12).fill({ color: 0x445566 });
+      g.rect(ox + 1, oy + 1, 1, 8).fill({ color: 0xee4444 }); // red pen
+      g.rect(ox + 3, oy + 1, 1, 6).fill({ color: 0x44aa44 }); // green pen
+      // Sticky notes pad
+      g.rect(ox + 8, oy + 4, 10, 10).fill({ color: 0xffee44 });
+      g.rect(ox + 8, oy + 4, 10, 2).fill({ color: 0xeecc22 }); // note shadow
+    }
+
+    // ── Extra plant in lounge ──────────────────────────────────────────────
+    const extraPlantX = LOUNGE_X + LOUNGE_W - 60, extraPlantY = LOUNGE_Y + LOUNGE_H - 20;
+    g.rect(extraPlantX - 8, extraPlantY - 6, 16, 8).fill({ color: 0x8b4513 }); // pot
+    g.rect(extraPlantX - 6, extraPlantY - 30, 12, 24).fill({ color: 0x228b22 }); // leaves
+    g.rect(extraPlantX - 3, extraPlantY - 40, 6, 12).fill({ color: 0x2a9a2a }); // tall leaf
+
     this.container.addChildAt(g, 0);
 
     // Add chairs layer on top of floor/desks but below agents
