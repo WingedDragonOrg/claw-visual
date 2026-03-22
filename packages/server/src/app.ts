@@ -171,10 +171,10 @@ export function createApp(state: AppState = createDefaultState()) {
 
   // ── Static Files & SPA Fallback ─────────────────────────────────────────────
   // Serve static files from packages/web/dist
-  app.use('/*', serveStatic({ root: './packages/web/dist' }));
+  app.use('/*', serveStatic({ root: '../web/dist' }));
 
   // SPA fallback - serve index.html for non-API routes
-  app.use('*', serveStatic({ path: './packages/web/dist/index.html' }));
+  app.use('*', serveStatic({ path: '../web/dist/index.html' }));
 
   return { app, injectWebSocket, broadcast };
 }
