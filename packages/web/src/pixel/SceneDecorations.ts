@@ -1,5 +1,6 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { SCENE_W, DESK_SLOTS, LOUNGE_X, LOUNGE_Y, LOUNGE_W, LOUNGE_H, WAYPOINTS } from './SceneLayout';
+import type { GitHubSummary } from '../types';
 
 /** A decorative monitor placed at each desk slot */
 interface MonitorEntry {
@@ -31,6 +32,12 @@ export class SceneDecorations {
   private steamFrame = 0;
   private chairGraphics: Graphics | null = null;
   private chairStates: Map<string, boolean> = new Map(); // agentId -> online
+
+  // Whiteboard elements (dynamic)
+  private whiteboardBars: Graphics | null = null;
+  private whiteboardLabel: Text | null = null;
+  private whiteboardOpenText: Text | null = null;
+  private whiteboardClosedText: Text | null = null;
 
   constructor() {
     this.container = new Container();
@@ -212,7 +219,7 @@ export class SceneDecorations {
       g.rect(winX, 18, 80, 2).fill({ color: 0xa09080 });
     }
 
-    // ── Whiteboard (top-left, near bookshelf) ─────────────────────────────
+    // ── Whiteboard (top-left, near bookshelf) — static frame ──────────────
     // Outer frame
     g.rect(44, 30, 80, 60).fill({ color: 0xe8e0d0 });
     // Inner border (inset 1px)
@@ -222,29 +229,7 @@ export class SceneDecorations {
     for (const ly of [42, 50, 58]) {
       g.rect(48, ly, 70, 1).fill({ color: 0x8899aa, alpha: 0.7 });
     }
-    // Bar chart
-    const bars = [
-      { bx: 48, h: 12 }, { bx: 56, h: 18 }, { bx: 64, h: 10 }, { bx: 72, h: 15 },
-    ];
-    for (const bar of bars) {
-      g.rect(bar.bx, 80 - bar.h, 6, bar.h).fill({ color: 0x5588cc, alpha: 0.8 });
-    }
-    // Trend line (4 points connected by thin rects)
-    const trendPts = [
-      { x: 50, y: 72 }, { x: 58, y: 64 }, { x: 66, y: 68 }, { x: 74, y: 58 },
-    ];
-    for (let i = 0; i < trendPts.length - 1; i++) {
-      const p0 = trendPts[i], p1 = trendPts[i + 1];
-      const dx = p1.x - p0.x;
-      const dy = p1.y - p0.y;
-      const len = Math.sqrt(dx * dx + dy * dy);
-      const angle = Math.atan2(dy, dx);
-      const seg = new Graphics();
-      seg.rect(0, -0.5, len, 1).fill({ color: 0xcc4444, alpha: 0.8 });
-      seg.position.set(p0.x, p0.y);
-      seg.rotation = angle;
-      this.container.addChild(seg);
-    }
+    // Dynamic content (bar chart + labels) built in buildWhiteboard()
 
     // ── Desk coffee mugs ────────────────────────────────────────────────────
     for (const slot of DESK_SLOTS) {
@@ -283,14 +268,86 @@ export class SceneDecorations {
       this.container.addChild(this.chairGraphics);
     }
 
-    // ── Whiteboard label (added after Graphics so it sits on top) ────────
-    const boardLabel = new Text({
-      text: 'BOARD',
+    // Build dynamic whiteboard content
+    this.buildWhiteboard();
+  }
+
+  // ─── Whiteboard (dynamic) ───────────────────────────────────────────────
+  private buildWhiteboard() {
+    // Bar chart (4 bars representing issue activity)
+    this.whiteboardBars = new Graphics();
+    this.container.addChild(this.whiteboardBars);
+
+    // "BOARD" label
+    this.whiteboardLabel = new Text({
+      text: 'ISSUES',
       style: new TextStyle({ fontFamily: 'monospace', fontSize: 7, fill: 0x998880 }),
     });
-    boardLabel.anchor.set(0.5, 0);
-    boardLabel.position.set(64, 92);
-    this.container.addChild(boardLabel);
+    this.whiteboardLabel.anchor.set(0.5, 0);
+    this.whiteboardLabel.position.set(84, 30);
+    this.container.addChild(this.whiteboardLabel);
+
+    // Open count label
+    this.whiteboardOpenText = new Text({
+      text: '---',
+      style: new TextStyle({ fontFamily: 'monospace', fontSize: 6, fill: 0x5588cc }),
+    });
+    this.whiteboardOpenText.anchor.set(0, 0);
+    this.whiteboardOpenText.position.set(48, 68);
+    this.container.addChild(this.whiteboardOpenText);
+
+    // Closed count label
+    this.whiteboardClosedText = new Text({
+      text: '---',
+      style: new TextStyle({ fontFamily: 'monospace', fontSize: 6, fill: 0xcc4444 }),
+    });
+    this.whiteboardClosedText.anchor.set(0, 0);
+    this.whiteboardClosedText.position.set(80, 68);
+    this.container.addChild(this.whiteboardClosedText);
+
+    // Draw initial placeholder bars
+    this.drawWhiteboardBars(0, 0);
+  }
+
+  private drawWhiteboardBars(open: number, closed: number) {
+    if (!this.whiteboardBars) return;
+    this.whiteboardBars.clear();
+
+    // Normalize to max height of 20px, max total of 20 issues for scaling
+    const maxIssues = Math.max(open + closed, 20);
+    const maxH = 20;
+    const openH = Math.round((open / maxIssues) * maxH);
+    const closedH = Math.round((closed / maxIssues) * maxH);
+
+    // 4 bars: open1, open2, closed1, closed2 (alternating pattern)
+    const bars = [
+      { bx: 48, h: openH > 0 ? Math.max(openH / 2, 2) : 0 },
+      { bx: 56, h: openH > 0 ? Math.max(openH, 2) : 0 },
+      { bx: 64, h: closedH > 0 ? Math.max(closedH / 2, 2) : 0 },
+      { bx: 72, h: closedH > 0 ? Math.max(closedH, 2) : 0 },
+    ];
+
+    const baseY = 80;
+    for (const bar of bars) {
+      if (bar.h > 0) {
+        this.whiteboardBars!.rect(bar.bx, baseY - bar.h, 6, bar.h).fill({ color: 0x5588cc, alpha: 0.8 });
+      }
+    }
+
+    // Trend line dots (small squares at top of bars)
+    for (const bar of bars) {
+      if (bar.h > 0) {
+        this.whiteboardBars!.rect(bar.bx + 1, baseY - bar.h - 1, 4, 1).fill({ color: 0xcc4444, alpha: 0.8 });
+      }
+    }
+  }
+
+  updateWhiteboard(summary: GitHubSummary) {
+    if (!this.whiteboardBars || !this.whiteboardOpenText || !this.whiteboardClosedText) return;
+
+    this.drawWhiteboardBars(summary.open, summary.closed);
+    this.whiteboardOpenText.text = `O:${summary.open}`;
+    this.whiteboardClosedText.text = `C:${summary.closed}`;
   }
 
   private drawChairs(g: Graphics, chairStates: Map<string, boolean>) {
