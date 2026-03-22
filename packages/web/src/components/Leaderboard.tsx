@@ -55,6 +55,8 @@ export function Leaderboard({ entries, onAgentClick }: LeaderboardProps) {
                 gap: '12px',
                 cursor: onAgentClick ? 'pointer' : 'default',
                 borderBottom: '1px solid var(--glass-border)',
+                minHeight: '36px',
+                boxSizing: 'border-box',
               }}
             >
               {/* Rank */}
@@ -71,7 +73,9 @@ export function Leaderboard({ entries, onAgentClick }: LeaderboardProps) {
               {/* Agent name */}
               <span style={{
                 flex: 1,
+                minWidth: 0,
                 fontSize: '13px',
+                lineHeight: '20px',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
