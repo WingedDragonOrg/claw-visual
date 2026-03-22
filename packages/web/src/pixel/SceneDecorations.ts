@@ -42,6 +42,12 @@ export class SceneDecorations {
   private whiteboardLabel: Text | null = null;
   private whiteboardOpenText: Text | null = null;
   private whiteboardClosedText: Text | null = null;
+  private wbFlashTimer = 0;
+  private prevWbOpen = -1;
+  private prevWbClosed = -1;
+
+  // Clock display
+  private clockText: Text | null = null;
 
   constructor() {
     this.container = new Container();
@@ -315,6 +321,15 @@ export class SceneDecorations {
 
     // Build dynamic whiteboard content
     this.buildWhiteboard();
+
+    // Clock display (top-right corner)
+    this.clockText = new Text({
+      text: '',
+      style: new TextStyle({ fontFamily: 'monospace', fontSize: 5, fill: 0xaaaaaa }),
+    });
+    this.clockText.anchor.set(1, 0);
+    this.clockText.position.set(SCENE_W - 10, 10);
+    this.container.addChild(this.clockText);
   }
 
   // ─── Whiteboard (dynamic) ───────────────────────────────────────────────
@@ -389,6 +404,13 @@ export class SceneDecorations {
 
   updateWhiteboard(summary: GitHubSummary) {
     if (!this.whiteboardBars || !this.whiteboardOpenText || !this.whiteboardClosedText) return;
+
+    // Trigger flash if values changed
+    if (summary.open !== this.prevWbOpen || summary.closed !== this.prevWbClosed) {
+      this.wbFlashTimer = 1.0;
+    }
+    this.prevWbOpen = summary.open;
+    this.prevWbClosed = summary.closed;
 
     this.drawWhiteboardBars(summary.open, summary.closed);
     this.whiteboardOpenText.text = `O:${summary.open}`;
@@ -613,6 +635,27 @@ export class SceneDecorations {
       const mon = this.monitors[i];
       if (!mon.online) continue;
       mon.g.alpha = 0.90 + Math.sin(elapsed * 1.6 + i) * 0.10;
+    }
+
+    // Whiteboard number flash animation
+    if (this.wbFlashTimer > 0) {
+      this.wbFlashTimer -= deltaTime;
+      const t = Math.max(0, this.wbFlashTimer);
+      const scale = 1 + Math.sin(t * Math.PI * 6) * 0.25;
+      if (this.whiteboardOpenText) this.whiteboardOpenText.scale.set(scale);
+      if (this.whiteboardClosedText) this.whiteboardClosedText.scale.set(scale);
+    } else {
+      if (this.whiteboardOpenText) this.whiteboardOpenText.scale.set(1);
+      if (this.whiteboardClosedText) this.whiteboardClosedText.scale.set(1);
+    }
+
+    // Clock update (every second)
+    if (this.clockText) {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      this.clockText.text = `${hh}:${mm}:${ss}`;
     }
   }
 }
