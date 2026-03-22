@@ -1,8 +1,14 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { fetchAgents, fetchIssues } from '../api';
-import { usePolling } from '../hooks';
+import { usePolling, useRealtimeData } from '../hooks';
 import { PixiApp, type OfficeTheme } from '../pixel/PixiApp';
 import type { Agent, GitHubSummary } from '../types';
+
+function getWsUrl(): string {
+  const envBase = import.meta.env.VITE_API_BASE || '';
+  const wsBase = envBase.replace(/^http/, 'ws');
+  return `${wsBase}/ws`;
+}
 
 const THEME_LABELS: Record<OfficeTheme, string> = {
   auto: '自动',
@@ -130,6 +136,31 @@ export function PixelOffice() {
 
   const issuesFetcher = useCallback(() => fetchIssues(), []);
   const { data: githubSummary } = usePolling<GitHubSummary>(issuesFetcher);
+
+  // WebSocket for real-time PixiApp updates (WS-only, no polling fetcher)
+  const wsUrl = getWsUrl();
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useRealtimeData(
+    undefined,
+    wsUrl,
+    30_000,
+    {
+      onAgentUpdate: (data) => {
+        if (!pixiRef.current?.isReady()) return;
+        pixiRef.current.updateAgents(data.agents ?? []);
+        // Refresh popup if open
+        if (popup) {
+          const updated = (data.agents ?? []).find((a: Agent) => a.id === popup.agent.id);
+          if (updated) setPopup((p) => p ? { ...p, agent: updated } : null);
+        }
+      },
+      onGitHubRefresh: (data) => {
+        if (pixiRef.current?.isReady()) {
+          pixiRef.current.updateWhiteboard(data);
+        }
+      },
+    }
+  );
 
   // Close popup on outside click
   useEffect(() => {

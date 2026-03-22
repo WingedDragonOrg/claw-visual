@@ -30,7 +30,7 @@ function getBackoffDelay(attempt: number): number {
 }
 
 export function useRealtimeData<T>(
-  fetcher: () => Promise<T>,
+  fetcher: (() => Promise<T>) | null | undefined,
   wsUrl: string | null = null,
   intervalMs = 30_000,
   options: UseRealtimeDataOptions = {}
@@ -49,6 +49,7 @@ export function useRealtimeData<T>(
   const isUnmountRef = useRef(false);
 
   const poll = useCallback(async () => {
+    if (!fetcher) return;
     try {
       const result = await fetcher();
       setData(result);
