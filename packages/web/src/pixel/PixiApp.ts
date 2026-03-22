@@ -5,6 +5,7 @@ import { SceneDecorations } from './SceneDecorations';
 import { assignFixedSlots, SCENE_W, SCENE_H } from './SceneLayout';
 import { loadFurnitureSprites } from './FurnitureSprites';
 import { ParticleSystem } from './ParticleSystem';
+import { SoundManager } from './SoundManager';
 
 /** Callback when an agent sprite is clicked */
 export type AgentClickHandler = (agent: Agent, canvasX: number, canvasY: number) => void;
@@ -30,6 +31,7 @@ export class PixiApp {
   private onAgentClick: AgentClickHandler | null = null;
   private currentTheme: OfficeTheme = 'auto';
   private particles!: ParticleSystem;
+  private sounds!: SoundManager;
 
   // Zoom state
   private _scale = 1;
@@ -88,6 +90,9 @@ export class PixiApp {
     // Particle system (above agents)
     this.particles = new ParticleSystem();
     world.addChild(this.particles.display);
+
+    // Sound system
+    this.sounds = new SoundManager();
 
     // Load and overlay Kenney furniture sprites
     loadFurnitureSprites().then(() => {
@@ -208,6 +213,7 @@ export class PixiApp {
       const agent = this.agentMap.get(agentId);
       const roleText = agent?.role ?? '工作中';
       sprite.showSpeech(roleText, 3500);
+      this.sounds.ping();
     }
   }
 
@@ -216,7 +222,17 @@ export class PixiApp {
     const sprite = this.sprites.get(agentId);
     if (sprite) {
       sprite.showSpeech(text, durationMs);
+      this.sounds.blip();
     }
+  }
+
+  /** Unlock audio context on first user interaction */
+  unlockAudio() {
+    this.sounds.unlock();
+  }
+
+  setSoundMuted(v: boolean) {
+    this.sounds.setMuted(v);
   }
 
   /** Reset pan and zoom to default */
