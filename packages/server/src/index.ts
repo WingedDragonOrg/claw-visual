@@ -93,6 +93,12 @@ async function pollData() {
       state.channels = await fetchChannels(onlineIds);
       state.useRealData = true;
       checkAgentStatusChanges(agents);
+
+      // Broadcast updates to WebSocket clients
+      broadcast('agent-update', { agents: state.agents });
+      broadcast('activity-new', { activities: state.activities.slice(0, 20) });
+      broadcast('github-refresh', state.gitHub);
+      broadcast('channel-update', { channels: state.channels });
     }
   } catch (e) {
     console.error('[claw-visual] Error polling data:', e);
@@ -105,7 +111,7 @@ pollData();
 setInterval(pollData, POLL_INTERVAL);
 
 // Create and start server
-const { app, injectWebSocket } = createApp(state) as any;
+const { app, injectWebSocket, broadcast } = createApp(state) as any;
 const server = serve({
   fetch: app.fetch,
   port: PORT,
@@ -113,6 +119,11 @@ const server = serve({
 
 // Inject WebSocket after server starts
 injectWebSocket(server);
+
+// Heartbeat: ping all clients every 30s
+setInterval(() => {
+  broadcast('heartbeat:ping', { timestamp: Date.now() });
+}, 30_000);
 
 console.log(`[claw-visual] Server running at http://localhost:${PORT}`);
 console.log(`[claw-visual] data source: reading from ${process.env.AGENTS_DIR || '/home/ubuntu/.openclaw/agents'}`);
