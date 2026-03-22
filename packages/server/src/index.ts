@@ -1,6 +1,6 @@
 import { serve } from '@hono/node-server';
 import { createApp, createDefaultState, type AppState } from './app.js';
-import type { Agent, Activity, GitHubSummary, channel } from './types.js';
+import type { Agent, Activity, GitHubSummary, Channel } from './types.js';
 import { getMockAgents, getMockActivities } from './mock-data.js';
 import { fetchAgentsAndActivities } from './openclaw.js';
 import { fetchGitHubIssues, getIssueCountForAgent } from './github.js';
