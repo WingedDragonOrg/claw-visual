@@ -186,6 +186,12 @@ export function PixelOffice() {
 
       pixiRef.current.updateAgents(agents);
       tick(agents);
+
+      // Update team status on whiteboard
+      const online = agents.filter((a) => a.status !== 'offline' && a.status !== 'error').length;
+      const total = agents.length;
+      const topScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
+      pixiRef.current.updateTeamStatus(online, total, topScore);
       // Update popup agent data if open
       if (popup) {
         const updated = agents.find((a) => a.id === popup.agent.id);
