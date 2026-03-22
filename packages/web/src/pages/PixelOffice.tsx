@@ -246,8 +246,36 @@ export function PixelOffice() {
         >
           <canvas
             ref={canvasRef}
-            style={{ display: 'block', imageRendering: 'pixelated' }}
+            style={{ display: 'block', imageRendering: 'pixelated', cursor: 'grab' }}
           />
+          {/* Zoom controls */}
+          <div style={{
+            position: 'absolute', bottom: 8, right: 8,
+            display: 'flex', gap: 4, alignItems: 'center',
+            background: 'rgba(12,12,26,0.8)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: 8,
+            padding: '4px 8px',
+          }}>
+            <button
+              onClick={() => pixiRef.current?.setScale((pixiRef.current as any)._scale * 0.9)}
+              style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}
+              title="缩小"
+            >−</button>
+            <span style={{ fontSize: 11, color: '#888', minWidth: 36, textAlign: 'center' }}>
+              {Math.round((pixiRef.current as any)?._scale * 100)}%
+            </span>
+            <button
+              onClick={() => pixiRef.current?.setScale((pixiRef.current as any)._scale * 1.1)}
+              style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 16, padding: '0 4px' }}
+              title="放大"
+            >+</button>
+            <button
+              onClick={() => pixiRef.current?.resetView()}
+              style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 11, padding: '0 4px', borderLeft: '1px solid #333', marginLeft: 2 }}
+              title="重置视图"
+            >重置</button>
+          </div>
         </div>
       )}
 
