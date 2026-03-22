@@ -7,6 +7,9 @@ import { assignFixedSlots, SCENE_W, SCENE_H } from './SceneLayout';
 /** Callback when an agent sprite is clicked */
 export type AgentClickHandler = (agent: Agent, canvasX: number, canvasY: number) => void;
 
+/** Office theme options */
+export type OfficeTheme = 'auto' | 'day' | 'night' | 'dusk' | 'holiday';
+
 export class PixiApp {
   private app: Application | null = null;
   private sprites: Map<string, AgentSprite> = new Map();
@@ -18,6 +21,7 @@ export class PixiApp {
   private colorFilter: ColorMatrixFilter | null = null;
   private dayNightTimer = 0;
   private onAgentClick: AgentClickHandler | null = null;
+  private currentTheme: OfficeTheme = 'auto';
 
   setClickHandler(handler: AgentClickHandler) {
     this.onAgentClick = handler;
@@ -93,6 +97,35 @@ export class PixiApp {
       this.colorFilter.tint(0xffcc88, false);
     }
     // Daytime: no filter change (neutral)
+  }
+
+  /** Set office theme */
+  setTheme(theme: OfficeTheme) {
+    if (!this.colorFilter) return;
+    this.currentTheme = theme;
+    this.colorFilter.reset();
+
+    switch (theme) {
+      case 'auto':
+        this.applyDayNight();
+        break;
+      case 'day':
+        // No filter - full brightness
+        break;
+      case 'night':
+        this.colorFilter.brightness(0.55, false);
+        this.colorFilter.tint(0x8899cc, false);
+        break;
+      case 'dusk':
+        this.colorFilter.brightness(0.85, false);
+        this.colorFilter.tint(0xffcc88, false);
+        break;
+      case 'holiday':
+        this.colorFilter.brightness(0.9, false);
+        this.colorFilter.hue(30, false);
+        this.colorFilter.saturate(1.2, false);
+        break;
+    }
   }
 
   isReady(): boolean {
