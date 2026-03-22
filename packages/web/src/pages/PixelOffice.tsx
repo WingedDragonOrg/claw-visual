@@ -1,6 +1,8 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { fetchAgents, fetchIssues } from '../api';
 import { usePolling } from '../hooks';
+import { useGamification } from '../hooks/useGamification';
+import { Leaderboard } from '../components/Leaderboard';
 import { PixiApp, type OfficeTheme } from '../pixel/PixiApp';
 import type { Agent, GitHubSummary } from '../types';
 
@@ -131,6 +133,9 @@ export function PixelOffice() {
   const issuesFetcher = useCallback(() => fetchIssues(), []);
   const { data: githubSummary } = usePolling<GitHubSummary>(issuesFetcher);
 
+  // Gamification
+  const { leaderboard, tick } = useGamification();
+
   // Close popup on outside click
   useEffect(() => {
     if (!popup) return;
@@ -168,6 +173,7 @@ export function PixelOffice() {
     if (!agents) return;
     if (pixiRef.current?.isReady()) {
       pixiRef.current.updateAgents(agents);
+      tick(agents);
       // Update popup agent data if open
       if (popup) {
         const updated = agents.find((a) => a.id === popup.agent.id);
@@ -275,6 +281,21 @@ export function PixelOffice() {
               style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 11, padding: '0 4px', borderLeft: '1px solid #333', marginLeft: 2 }}
               title="重置视图"
             >重置</button>
+          </div>
+
+          {/* Leaderboard overlay */}
+          <div style={{
+            position: 'absolute', bottom: 8, left: 8,
+            width: 220,
+          }}>
+            <Leaderboard
+              entries={leaderboard}
+              onAgentClick={(agentId) => {
+                // Highlight agent in PixiApp
+                const agent = agents?.find((a) => a.id === agentId);
+                if (agent) setPopup({ agent, x: window.innerWidth / 2, y: window.innerHeight / 2 });
+              }}
+            />
           </div>
         </div>
       )}
