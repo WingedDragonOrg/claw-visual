@@ -16,6 +16,7 @@ export class PixiApp {
   private app: Application | null = null;
   private world: Container | null = null;   // pan/zoom container wrapping everything
   private sprites: Map<string, AgentSprite> = new Map();
+  private agentMap: Map<string, Agent> = new Map();
   private decorations: SceneDecorations | null = null;
   private initialized = false;
   private frame = 0;
@@ -203,6 +204,18 @@ export class PixiApp {
       sprite.flash(durationMs);
       const pos = sprite.getPosition();
       this.particles.spawn(pos.x, pos.y, 16, 0xffd700, 80, 0.9, 4);
+      // Speech bubble feedback
+      const agent = this.agentMap.get(agentId);
+      const roleText = agent?.role ?? '工作中';
+      sprite.showSpeech(roleText, 3500);
+    }
+  }
+
+  /** Show a speech bubble on an agent */
+  showSpeech(agentId: string, text: string, durationMs = 4000) {
+    const sprite = this.sprites.get(agentId);
+    if (sprite) {
+      sprite.showSpeech(text, durationMs);
     }
   }
 
@@ -303,6 +316,10 @@ export class PixiApp {
     const statuses = agents.map((a) => a.status);
     const slots = assignFixedSlots(agents.length, statuses);
     const monitorSlots: { x: number; y: number; agentId: string; online: boolean }[] = [];
+
+    // Update agent map
+    this.agentMap.clear();
+    agents.forEach((agent) => this.agentMap.set(agent.id, agent));
 
     agents.forEach((agent, i) => {
       const slot = slots[i];
