@@ -3,6 +3,7 @@ import type { Agent, GitHubSummary } from '../types';
 import { AgentSprite } from './AgentSprite';
 import { SceneDecorations } from './SceneDecorations';
 import { assignFixedSlots, SCENE_W, SCENE_H } from './SceneLayout';
+import { loadFurnitureSprites } from './FurnitureSprites';
 
 /** Callback when an agent sprite is clicked */
 export type AgentClickHandler = (agent: Agent, canvasX: number, canvasY: number) => void;
@@ -80,6 +81,11 @@ export class PixiApp {
     const deco = new SceneDecorations();
     this.decorations = deco;
     world.addChild(deco.container);
+
+    // Load and overlay Kenney furniture sprites
+    loadFurnitureSprites().then(() => {
+      deco.overlayFurnitureSprites();
+    }).catch(console.error);
 
     // Ticker
     app.ticker.add((ticker) => {
