@@ -16,6 +16,8 @@ interface Cloud {
 interface Plant {
   g: Graphics;
   phase: number;
+  watering: boolean;
+  waterDrops: Graphics | null;
 }
 
 export class SceneDecorations {
@@ -23,6 +25,10 @@ export class SceneDecorations {
   private monitors: MonitorEntry[] = [];
   private clouds: Cloud[] = [];
   private plants: Plant[] = [];
+  private coffeeMachine: Graphics | null = null;
+  private coffeeSteam: Graphics | null = null;
+  private coffeeBrewing = false;
+  private steamFrame = 0;
   private chairGraphics: Graphics | null = null;
   private chairStates: Map<string, boolean> = new Map(); // agentId -> online
 
@@ -147,6 +153,15 @@ export class SceneDecorations {
     // Coffee mug on table
     g.rect(lx + 90, ly + 115, 10, 12).fill({ color: 0xdddddd });
     g.rect(lx + 92, ly + 117, 6, 8).fill({ color: 0x8b4513 }); // coffee
+
+    // Coffee machine (interactive)
+    this.coffeeMachine = new Graphics();
+    this.drawCoffeeMachine(this.coffeeMachine);
+    this.coffeeMachine.position.set(lx + 10, ly + 80);
+    this.coffeeMachine.eventMode = 'static';
+    this.coffeeMachine.cursor = 'pointer';
+    this.coffeeMachine.on('pointerdown', () => this.brewCoffee());
+    this.container.addChild(this.coffeeMachine);
 
     // ── Bookshelf (left wall) ─────────────────────────────────────────────
     g.rect(20, 30, 20, 160).fill({ color: 0x5a3e2b });
@@ -365,9 +380,86 @@ export class SceneDecorations {
       this.drawPlant(g);
       g.pivot.set(0, 20);
       g.position.set(pos.x, pos.y);
+      g.eventMode = 'static';
+      g.cursor = 'pointer';
+      g.on('pointerdown', () => this.waterPlant(this.plants.length));
       this.container.addChild(g);
-      this.plants.push({ g, phase: Math.random() * Math.PI * 2 });
+      this.plants.push({ g, phase: Math.random() * Math.PI * 2, watering: false, waterDrops: null });
     }
+  }
+
+  private waterPlant(index: number) {
+    const plant = this.plants[index];
+    if (!plant || plant.watering) return;
+    plant.watering = true;
+    plant.phase = 0; // Reset animation for bounce effect
+
+    // Create water drops
+    const drops = new Graphics();
+    drops.position.set(plant.g.position.x, plant.g.position.y - 20);
+    this.container.addChild(drops);
+    plant.waterDrops = drops;
+
+    // Animate water drops falling
+    let frame = 0;
+    const animate = () => {
+      if (frame > 30) {
+        this.container.removeChild(drops);
+        plant.waterDrops = null;
+        plant.watering = false;
+        return;
+      }
+      drops.clear();
+      for (let i = 0; i < 5; i++) {
+        const y = frame * 2 + i * 4;
+        drops.ellipse((i - 2) * 3, y, 2, 3).fill({ color: 0x66bbff, alpha: 0.7 - frame * 0.02 });
+      }
+      frame++;
+      requestAnimationFrame(animate);
+    };
+    animate();
+  }
+
+  private drawCoffeeMachine(g: Graphics) {
+    g.clear();
+    // Machine body
+    g.rect(-10, -15, 20, 30).fill({ color: 0x444444 });
+    g.rect(-8, -12, 16, 20).fill({ color: 0x666666 });
+    // Button
+    g.circle(0, 5, 3).fill({ color: 0x22cc44 });
+    // Spout
+    g.rect(-2, 12, 4, 6).fill({ color: 0x333333 });
+  }
+
+  private brewCoffee() {
+    if (this.coffeeBrewing || !this.coffeeMachine) return;
+    this.coffeeBrewing = true;
+    this.steamFrame = 0;
+
+    // Create steam particles
+    const steam = new Graphics();
+    steam.position.set(this.coffeeMachine.position.x, this.coffeeMachine.position.y + 5);
+    this.container.addChild(steam);
+    this.coffeeSteam = steam;
+
+    // Animate steam rising
+    const animate = () => {
+      if (this.steamFrame > 45) {
+        this.container.removeChild(steam);
+        this.coffeeSteam = null;
+        this.coffeeBrewing = false;
+        return;
+      }
+      steam.clear();
+      for (let i = 0; i < 3; i++) {
+        const y = -this.steamFrame * 1.2 - i * 6;
+        const x = Math.sin((this.steamFrame + i * 15) * 0.3) * 6;
+        steam.ellipse(x, y, 4, 5).fill({ color: 0xeeeeee, alpha: 0.5 - this.steamFrame * 0.01 });
+      }
+      this.steamFrame++;
+      requestAnimationFrame(animate);
+    };
+    animate();
   }
 
   private drawPlant(g: Graphics) {
