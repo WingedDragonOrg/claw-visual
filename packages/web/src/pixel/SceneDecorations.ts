@@ -1,9 +1,10 @@
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import {
   SCENE_W, SCENE_H, DESK_SLOTS, LOUNGE_X, LOUNGE_Y, LOUNGE_W, LOUNGE_H,
   MEETING_X, MEETING_Y, MEETING_W, MEETING_H,
   WAYPOINTS,
 } from './SceneLayout';
+import { getFurnitureTexture } from './FurnitureSprites';
 import type { GitHubSummary } from '../types';
 
 /** A decorative monitor placed at each desk slot */
@@ -54,6 +55,56 @@ export class SceneDecorations {
     this.drawOfficeFurniture();
     this.buildPlants();
     this.buildClouds();
+  }
+
+  /** Layer Kenney sprite assets over procedural drawings (call after loadFurnitureSprites) */
+  async overlayFurnitureSprites() {
+    // Lounge lamp sprite
+    const lampTex = getFurnitureTexture('lampRoundFloor', 0);
+    if (lampTex) {
+      const lampSprite = new Sprite(lampTex);
+      lampSprite.anchor.set(0.5, 1);
+      lampSprite.position.set(LOUNGE_X + LOUNGE_W - 30, LOUNGE_Y + 100);
+      lampSprite.scale.set(0.7);
+      this.container.addChild(lampSprite);
+    }
+
+    // Lounge rug sprite (on top of procedural rug)
+    const rugTex = getFurnitureTexture('rugRectangle', 0);
+    if (rugTex) {
+      const rugSprite = new Sprite(rugTex);
+      rugSprite.anchor.set(0.5, 0.5);
+      rugSprite.position.set(LOUNGE_X + LOUNGE_W / 2, LOUNGE_Y + LOUNGE_H / 2 + 30);
+      rugSprite.scale.set(1.0);
+      this.container.addChild(rugSprite);
+    }
+
+    // Small plant sprites (cover procedural plants)
+    const plantTex = getFurnitureTexture('plantSmall1', 0);
+    if (plantTex) {
+      const plantPositions = [
+        { x: LOUNGE_X + LOUNGE_W - 10, y: LOUNGE_Y + LOUNGE_H - 10 },
+        { x: 60, y: LOUNGE_Y + 200 },
+        { x: 700, y: 440 },
+      ];
+      for (const pos of plantPositions) {
+        const ps = new Sprite(plantTex);
+        ps.anchor.set(0.5, 1);
+        ps.position.set(pos.x, pos.y);
+        ps.scale.set(0.8);
+        this.container.addChild(ps);
+      }
+    }
+
+    // Speaker sprite in lounge
+    const speakerTex = getFurnitureTexture('speaker', 0);
+    if (speakerTex) {
+      const speakerSprite = new Sprite(speakerTex);
+      speakerSprite.anchor.set(0.5, 1);
+      speakerSprite.position.set(LOUNGE_X + LOUNGE_W - 80, LOUNGE_Y + LOUNGE_H - 10);
+      speakerSprite.scale.set(0.7);
+      this.container.addChild(speakerSprite);
+    }
   }
 
   // ─── Static Office Furniture ──────────────────────────────────────────────
