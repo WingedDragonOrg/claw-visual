@@ -1,12 +1,11 @@
 [Unit]
-Description=claw-visual Server
+Description=claw-visual - OpenClaw Team Status Dashboard
 After=network.target
 
 [Service]
 Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/apps/claw-visual/packages/server
-Environment=NODE_ENV=production
 EnvironmentFile=/home/ubuntu/apps/claw-visual/.env
 ExecStart=/home/ubuntu/.bun/bin/bun src/index.ts
 Restart=on-failure
