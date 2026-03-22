@@ -54,18 +54,22 @@ export class PixiApp {
 
     // Ticker
     app.ticker.add((ticker) => {
-      this.frame++;
-      this.elapsed += ticker.deltaMS / 1000;
-      this.dayNightTimer += ticker.deltaMS;
+      try {
+        this.frame++;
+        this.elapsed += ticker.deltaMS / 1000;
+        this.dayNightTimer += ticker.deltaMS;
 
-      // Check day/night every 5 minutes
-      if (this.dayNightTimer >= 5 * 60 * 1000) {
-        this.dayNightTimer = 0;
-        this.applyDayNight();
+        // Check day/night every 5 minutes
+        if (this.dayNightTimer >= 5 * 60 * 1000) {
+          this.dayNightTimer = 0;
+          this.applyDayNight();
+        }
+
+        for (const sprite of this.sprites.values()) sprite.tick(this.frame);
+        this.decorations?.tick(this.elapsed, ticker.deltaTime);
+      } catch (err) {
+        console.error('[PixiApp] tick error:', err);
       }
-
-      for (const sprite of this.sprites.values()) sprite.tick(this.frame);
-      this.decorations?.tick(this.elapsed, ticker.deltaTime);
     });
 
     // Responsive scale
