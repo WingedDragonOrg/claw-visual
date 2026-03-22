@@ -14,8 +14,8 @@ const SPRITE_SHEETS: Record<string, string> = {
   xiaoai:   '/sprites/agent-xiaoai_ai.png',
   xiaochan: '/sprites/agent-xiaochan.png',
   xiaokai:  '/sprites/agent-xiaokai_ai.png',
-  xiaoqian: '/sprites/agent-xiaoqian-emoji.png',
-  xiaohou:  '/sprites/agent-xiaohou-emoji.png',
+  xiaoqian: '/sprites/agent-xiaoqian_ai.png',
+  xiaohou:  '/sprites/agent-xiaohou_ai.png',
 };
 
 const FALLBACK_POOL = Object.values(SPRITE_SHEETS);
