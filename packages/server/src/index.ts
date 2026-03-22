@@ -1,5 +1,7 @@
 import { serve } from '@hono/node-server';
+import { WebSocketServer, type WebSocket as WsType } from 'ws';
 import { createApp, createDefaultState, type AppState } from './app.js';
+import { wsClients } from './app.js';
 import type { Agent, Activity, GitHubSummary, Channel } from './types.js';
 import { getMockAgents, getMockActivities } from './mock-data.js';
 import { fetchAgentsAndActivities } from './openclaw.js';
@@ -111,14 +113,49 @@ pollData();
 setInterval(pollData, POLL_INTERVAL);
 
 // Create and start server
-const { app, injectWebSocket, broadcast } = createApp(state) as any;
+const { app, broadcast } = createApp(state) as any;
 const server = serve({
   fetch: app.fetch,
   port: PORT,
 });
 
-// Inject WebSocket after server starts
-injectWebSocket(server);
+// ── Native WebSocket server (replaces @hono/node-ws for Bun compatibility) ──
+const wss = new WebSocketServer({ noServer: true });
+
+wss.on('connection', (ws) => {
+  wsClients.add(ws);
+  console.log(`[ws] client connected, total: ${wsClients.size}`);
+
+  ws.on('message', (data) => {
+    try {
+      const msg = JSON.parse(data.toString());
+      if (msg.type === 'ping') {
+        ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+      } else if (msg.type === 'pong') {
+        // Client responded to heartbeat:ping, connection is alive
+      }
+    } catch {
+      // Ignore invalid messages
+    }
+  });
+
+  ws.on('close', () => {
+    wsClients.delete(ws);
+    console.log(`[ws] client disconnected, total: ${wsClients.size}`);
+  });
+});
+
+// Handle HTTP upgrade requests for /ws path
+server.on('upgrade', (request, socket, head) => {
+  const url = new URL(request.url, `http://${request.headers.host}`);
+  if (url.pathname === '/ws') {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
 
 // Heartbeat: ping all clients every 30s
 setInterval(() => {
