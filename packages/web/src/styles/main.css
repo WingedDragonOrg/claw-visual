@@ -1,6 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import './base.css';
 @import './animations.css';
 @import './layout.css';
 @import './components.css';
 @import './pages.css';
 @import './ui.css';
+
+/* ─── Retro-Futuristic Terminal theme ─────────────────────────────────────── */
+:root {
+  --pxo-bg: #0a0a0f;
+  --pxo-surface: #0f0f1a;
+  --pxo-border: #1a1a2e;
+  --pxo-text: #e0e0e8;
+  --pxo-text-dim: #5a5a6e;
+  --pxo-accent-cyan: #00ffcc;
+  --pxo-accent-magenta: #ff00aa;
+  --pxo-accent-amber: #ffaa00;
+}
+
+/* Scanline overlay on body */
+body {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+  background-color: var(--pxo-bg);
+}
