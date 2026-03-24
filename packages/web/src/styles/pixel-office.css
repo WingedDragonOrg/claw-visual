@@ -63,6 +63,11 @@
   50% { opacity: 0.4; }
 }
 
+@keyframes pxo-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+
 .pxo-stats {
   display: flex;
   gap: 16px;

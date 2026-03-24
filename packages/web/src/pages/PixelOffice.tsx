@@ -91,6 +91,7 @@ export function PixelOffice() {
   const [theme, setTheme] = useState<OfficeTheme>('auto');
   const [soundMuted, setSoundMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState('--:--:--');
 
   // Apply theme to PixiApp
   useEffect(() => {
@@ -181,6 +182,9 @@ export function PixelOffice() {
       const total = agents.length;
       const topScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
       pixiRef.current.updateTeamStatus(online, total, topScore);
+      // Update last refresh time
+      const now = new Date();
+      setLastUpdate(`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`);
       // Update popup agent data if open
       if (popup) {
         const updated = agents.find((a) => a.id === popup.agent.id);
@@ -229,6 +233,28 @@ export function PixelOffice() {
 
         {/* Theme Switcher */}
         <div className="pxo-theme-switcher">
+          {/* Live status indicator */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: 10,
+            color: 'var(--pxo-text-dim)',
+            letterSpacing: '1px',
+            textTransform: 'uppercase',
+            marginRight: 12,
+          }}>
+            <span style={{
+              width: 6, height: 6,
+              borderRadius: '50%',
+              background: error ? 'var(--pxo-accent-magenta)' : 'var(--pxo-accent-cyan)',
+              boxShadow: error
+                ? '0 0 6px var(--pxo-accent-magenta)'
+                : '0 0 6px var(--pxo-accent-cyan)',
+              animation: error ? 'none' : 'pxo-pulse-dot 2s ease-in-out infinite',
+            }} />
+            {error ? 'DISCONNECTED' : 'LIVE'}
+          </div>
+
           <span className="pxo-theme-label">THEME</span>
           {(Object.keys(THEME_LABELS) as OfficeTheme[]).map((t) => (
             <button
@@ -248,6 +274,30 @@ export function PixelOffice() {
             {soundMuted ? '🔇' : '🔊'}
           </button>
         </div>
+      </div>
+
+      {/* ── Status Bar ──────────────────────────────────────────────────── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '5px 16px',
+        background: 'var(--pxo-surface)',
+        borderTop: '1px solid var(--pxo-border)',
+        fontFamily: 'JetBrains Mono, monospace',
+        fontSize: 10,
+        color: 'var(--pxo-text-dim)',
+        letterSpacing: '0.5px',
+      }}>
+        <span>
+          <span style={{ color: 'var(--pxo-accent-cyan)', marginRight: 6 }}>◈</span>
+          CLAW-VISUAL v2.0
+        </span>
+        <span>
+          AGENTS: <span style={{ color: 'var(--pxo-text)' }}>{onlineCount}/{agents?.length ?? 0}</span>
+          {' · '}
+          PTS: <span style={{ color: 'var(--pxo-accent-amber)' }}>{leaderboard[0]?.score ?? 0}</span>
+          {' · '}
+          UPDATED: <span style={{ color: 'var(--pxo-text)' }}>{lastUpdate}</span>
+        </span>
       </div>
 
       {/* ── Body ──────────────────────────────────────────────────────────── */}
