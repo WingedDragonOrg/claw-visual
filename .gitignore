@@ -1,4 +1,16 @@
-node_modules
-dist
+node_modules/
+dist/
 .env
 *.log
+
+# Large binary assets (use CDN/external storage)
+*-orig.png
+*-hd.png
+jimeng_output/
+*.gif
+*.mp3
+*.wav
+
+# OS files
+.DS_Store
+Thumbs.db
