@@ -1,6 +1,87 @@
+@import "tailwindcss";
+
 @import './base.css';
 @import './animations.css';
 @import './layout.css';
 @import './components.css';
 @import './pages.css';
 @import './ui.css';
+
+/* ─── Tailwind v4 theme (CSS-first config) ─────────────────────────────────── */
+@theme {
+  --color-pxo-bg: #0a0a0f;
+  --color-pxo-surface: #0f0f1a;
+  --color-pxo-border: #1a1a2e;
+  --color-pxo-border-glow: rgba(0, 255, 204, 0.13);
+  --color-pxo-text: #e0e0e8;
+  --color-pxo-text-dim: #5a5a6e;
+  --color-pxo-cyan: #00ffcc;
+  --color-pxo-magenta: #ff00aa;
+  --color-pxo-amber: #ffaa00;
+
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --shadow-glow-cyan: 0 0 8px rgba(0, 255, 204, 0.4), 0 0 20px rgba(0, 255, 204, 0.15);
+  --shadow-glow-magenta: 0 0 8px rgba(255, 0, 170, 0.4), 0 0 20px rgba(255, 0, 170, 0.15);
+  --shadow-glow-amber: 0 0 8px rgba(255, 170, 0, 0.4);
+
+  --animate-pulse-dot: pxo-pulse-dot 2s ease-in-out infinite;
+  --animate-blink: pxo-blink 1s step-end infinite;
+  --animate-scan: pxo-scan 1.2s linear infinite;
+  --animate-float: pxo-float 3s ease-in-out infinite;
+}
+
+@keyframes pxo-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+@keyframes pxo-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+@keyframes pxo-scan {
+  from { left: -100%; }
+  to { left: 100%; }
+}
+@keyframes pxo-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* ─── Retro-Futuristic Terminal body ─────────────────────────────────────────── */
+body {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.08) 2px,
+      rgba(0, 0, 0, 0.08) 4px
+    );
+  background-color: var(--color-pxo-bg);
+}
+
+/* ─── Retro-Futuristic Terminal theme ─────────────────────────────────────── */
+:root {
+  --pxo-bg: #0a0a0f;
+  --pxo-surface: #0f0f1a;
+  --pxo-border: #1a1a2e;
+  --pxo-text: #e0e0e8;
+  --pxo-text-dim: #5a5a6e;
+  --pxo-accent-cyan: #00ffcc;
+  --pxo-accent-magenta: #ff00aa;
+  --pxo-accent-amber: #ffaa00;
+}
+
+/* Scanline overlay on body */
+body {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+  background-color: var(--pxo-bg);
+}
