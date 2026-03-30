@@ -40,8 +40,11 @@ export function Panel({
           className="ui-panel__toggle"
           onClick={() => setCollapsed((c) => !c)}
           aria-label={collapsed ? '展开侧边栏' : '收起侧边栏'}
+          title={collapsed ? '点击展开' : '点击收起'}
         >
-          {collapsed ? (side === 'left' ? '▶' : '◀') : (side === 'left' ? '◀' : '▶')}
+          {collapsed
+            ? (side === 'left' ? '▶ 展开' : '◀ 展开')
+            : (side === 'left' ? '◀' : '▶')}
         </button>
       )}
 

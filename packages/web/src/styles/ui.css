@@ -8,7 +8,6 @@
   border: 1px solid var(--glass-border);
   border-radius: 0;
   transition: width 0.25s ease;
-  overflow: hidden;
 }
 
 .ui-panel--left {
@@ -17,6 +16,7 @@
   border-top: none;
   border-bottom: none;
   border-radius: 0 8px 8px 0;
+  overflow: hidden;
 }
 
 .ui-panel--right {
@@ -25,42 +25,62 @@
   border-top: none;
   border-bottom: none;
   border-radius: 8px 0 0 8px;
+  overflow: hidden;
 }
 
 .ui-panel--collapsed {
-  width: 36px !important;
+  width: 40px !important;
+  min-width: 40px;
+  overflow: visible !important;
 }
 
 .ui-panel--collapsed .ui-panel__body {
   display: none;
 }
 
+/* Toggle button - expanded state */
 .ui-panel__toggle {
   position: absolute;
   top: 8px;
   right: 4px;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.08);
   border: 1px solid var(--glass-border);
-  border-radius: 4px;
-  color: var(--text-muted);
+  border-radius: 6px;
+  color: var(--text-secondary);
   cursor: pointer;
-  font-size: 10px;
-  z-index: 1;
-  transition: background 0.15s;
+  font-size: 12px;
+  z-index: 10;
+  transition: background 0.15s, color 0.15s;
 }
 
 .ui-panel__toggle:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.15);
   color: var(--text-primary);
 }
 
+/* Toggle button - collapsed state: full-height clickable strip */
 .ui-panel--collapsed .ui-panel__toggle {
-  right: 6px;
+  position: static;
+  width: 40px;
+  height: 100vh;
+  border: none;
+  border-radius: 0;
+  font-size: 20px;
+  background: rgba(255,255,255,0.06);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  writing-mode: vertical-lr;
+  letter-spacing: 3px;
+}
+
+.ui-panel--collapsed .ui-panel__toggle:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--text-primary);
 }
 
 .ui-panel__body {

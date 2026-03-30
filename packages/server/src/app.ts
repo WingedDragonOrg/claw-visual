@@ -150,6 +150,15 @@ export function createApp(state: AppState = createDefaultState()) {
   });
 
   // ── Static Files & SPA Fallback ─────────────────────────────────────────────
+  // No-cache for HTML to ensure fresh assets on reload
+  app.use('*', async (c, next) => {
+    await next();
+    const ct = c.res.headers.get('content-type') || '';
+    if (ct.includes('text/html')) {
+      c.res.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  });
+
   // Serve static files from packages/web/dist
   app.use('/*', serveStatic({ root: '../web/dist' }));
 

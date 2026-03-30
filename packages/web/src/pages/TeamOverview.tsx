@@ -110,14 +110,7 @@ export function TeamOverview() {
           </div>
         </div>
 
-        {/* Activity feed in sidebar */}
-        {dashboard && dashboard.recentActivities.length > 0 && (
-          <>
-            <hr className="ui-divider" />
-            <div className="sidebar-section-label">Recent Activity</div>
-            <ActivityFeed activities={dashboard.recentActivities} />
-          </>
-        )}
+        {/* Activity feed moved to main content area */}
       </Panel>
 
       {/* Main content */}
@@ -157,6 +150,20 @@ export function TeamOverview() {
           <span>Claw Visual v0.1 &middot; Powered by OpenClaw</span>
         </footer>
       </main>
+
+      {/* Right panel - Activity History */}
+      <Panel
+        side="right"
+        title="Recent Activity"
+        defaultCollapsed={false}
+        width={480}
+      >
+        {dashboard && dashboard.recentActivities.length > 0 ? (
+          <ActivityFeed activities={dashboard.recentActivities.slice(0, 20)} />
+        ) : (
+          <div className="empty-state">No recent activity</div>
+        )}
+      </Panel>
     </div>
   );
 }
