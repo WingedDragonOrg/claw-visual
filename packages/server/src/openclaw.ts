@@ -34,8 +34,10 @@ async function discoverAgentIds(): Promise<string[]> {
 
   try {
     const entries = await readdir(AGENTS_DIR);
+    const SKIP_AGENTS = new Set(['main']); // Skip default OpenClaw agent
     const ids: string[] = [];
     for (const id of entries) {
+      if (SKIP_AGENTS.has(id)) continue;
       const sessionsDir = join(AGENTS_DIR, id, 'sessions');
       try {
         await access(sessionsDir);
@@ -86,13 +88,19 @@ async function extractAgentMeta(agentId: string): Promise<AgentMeta> {
     };
   }
 
-  // Special case for main agent
+  // Skip main agent (default OpenClaw agent, not part of our team)
   if (agentId === 'main') {
-    return { name: '小爱同学', role: '私人助理', avatar: '小爱' };
+    return { name: '', role: '', avatar: '' };
   }
 
   // Check cache by mtime
-  const workspaceDir = join(WORKSPACES_DIR, `clawd-${agentId}`);
+  // Try both path patterns: agents/<id>/workspace/ (OpenClaw default) and clawd-<id>/ (legacy)
+  let workspaceDir = join(AGENTS_DIR, agentId, 'workspace');
+  try {
+    await access(workspaceDir);
+  } catch {
+    workspaceDir = join(WORKSPACES_DIR, `clawd-${agentId}`);
+  }
   const identityPath = join(workspaceDir, 'IDENTITY.md');
   const soulPath = join(workspaceDir, 'SOUL.md');
 
@@ -205,7 +213,7 @@ async function getLatestSession(agentId: string): Promise<{ path: string; mtime:
   }
 }
 
-const TAIL_BYTES = 8192; // 8KB
+const TAIL_BYTES = 32768; // 32KB - read more history
 
 /**
  * Read only the tail of a file (last 8KB) and parse JSONL lines
@@ -267,12 +275,57 @@ async function getLastMessageTime(filePath: string): Promise<number> {
 
 const SKIP_MESSAGES = ['NO_REPLY', 'HEARTBEAT_OK'];
 
+// Known group label → friendly name mapping (populated dynamically from DMWork API)
+import { getGroupName, refreshGroupNames } from './dmwork.js';
+
+// Initialize group names on module load
+refreshGroupNames().catch(() => {});
+
+async function resolveGroupName(label: string): Promise<string> {
+  const name = await getGroupName(label);
+  if (name) return name;
+  // Fallback: strip prefix
+  if (label.startsWith('group:')) return label.slice(6, 14) + '…';
+  if (label.startsWith('dm:') || label.startsWith('dmwork:')) return '私聊';
+  return label;
+}
+
+/**
+ * Extract session source (conversation_label) from the first few lines of a session file.
+ */
+async function extractSessionSource(filePath: string): Promise<string> {
+  const HEAD_BYTES = 8192;
+  // Match both escaped (\") and double-escaped (\\") JSON quotes
+  const CONV_LABEL_RE = /conversation_label\\*"\s*:\s*\\*"([^"\\]+)\\*"/;
+  let fh;
+  try {
+    fh = await open(filePath, 'r');
+  } catch {
+    return '';
+  }
+  try {
+    const fileStats = await fh.stat();
+    const readSize = Math.min(HEAD_BYTES, fileStats.size);
+    const buf = Buffer.alloc(readSize);
+    await fh.read(buf, 0, readSize, 0);
+    const content = buf.toString('utf-8');
+    const m = CONV_LABEL_RE.exec(content);
+    if (m) return await resolveGroupName(m[1]);
+    return '';
+  } finally {
+    await fh.close();
+  }
+}
+
 /**
  * Get recent activities - reads tail of file, iterates from end, stops when maxCount found
  */
-async function getRecentActivities(filePath: string, maxCount: number): Promise<{ text: string; timestamp: number }[]> {
+async function getRecentActivities(filePath: string, maxCount: number): Promise<{ text: string; timestamp: number; source?: string }[]> {
   const entries = await parseLastLines(filePath, 200);
-  const results: { text: string; timestamp: number }[] = [];
+  const results: { text: string; timestamp: number; source?: string }[] = [];
+
+  // Get session-level source from file header
+  const sessionSource = await extractSessionSource(filePath);
 
   // Iterate from end to find recent assistant messages - stop early
   for (let i = entries.length - 1; i >= 0 && results.length < maxCount; i--) {
@@ -288,9 +341,10 @@ async function getRecentActivities(filePath: string, maxCount: number): Promise<
 
     for (const block of content) {
       if (block.type === 'text' && block.text && !SKIP_MESSAGES.includes(block.text.trim())) {
+        const fullText = block.text.length > 800 ? block.text.slice(0, 800) + '…' : block.text;
         const text = block.text.length > 120 ? block.text.slice(0, 120) + '…' : block.text;
-        results.push({ text, timestamp: ts });
-        break; // one message per entry
+        results.push({ text, fullText, timestamp: ts, source: sessionSource || undefined });
+        break;
       }
     }
   }
@@ -361,7 +415,7 @@ export async function fetchAgentsAndActivities(): Promise<{ agents: Agent[]; act
         agent.status = resolveStatus(lastMsgMin);
         const lastSeenTs = lastMsgTime ? Math.max(session.mtime, lastMsgTime) : session.mtime;
         agent.lastSeen = new Date(lastSeenTs).toISOString();
-        const recentActs = await getRecentActivities(session.path, 5);
+        const recentActs = await getRecentActivities(session.path, 10);
         const lastAct = recentActs[recentActs.length - 1];
         agent.lastActivity = lastAct?.text || null;
 
@@ -372,7 +426,9 @@ export async function fetchAgentsAndActivities(): Promise<{ agents: Agent[]; act
             agentName: meta.name,
             action: inferAction(act.text),
             detail: act.text,
+            fullDetail: act.fullText !== act.text ? act.fullText : undefined,
             timestamp: new Date(act.timestamp).toISOString(),
+            source: act.source,
           });
         }
       }

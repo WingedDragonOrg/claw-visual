@@ -26,7 +26,9 @@ export interface Activity {
   agentName: string;
   action: string;
   detail: string;
+  fullDetail?: string;
   timestamp: string;
+  source?: string;
 }
 
 export interface GitHubIssue {

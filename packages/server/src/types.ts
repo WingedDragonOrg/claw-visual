@@ -20,7 +20,9 @@ export interface Activity {
   agentName: string;
   action: string;
   detail: string;
+  fullDetail?: string;
   timestamp: string;
+  source?: string; // e.g. group name or channel label
 }
 
 export interface GitHubIssue {

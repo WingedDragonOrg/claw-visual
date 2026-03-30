@@ -440,6 +440,19 @@
   font-weight: 600;
 }
 
+.activity-source {
+  font-size: 11px;
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
 .activity-action {
   font-size: 11px;
   font-weight: 500;
@@ -470,6 +483,34 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.activity-expandable {
+  cursor: pointer;
+}
+
+.activity-expandable:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+}
+
+.activity-expanded .activity-detail {
+  white-space: pre-wrap;
+  overflow: visible;
+  text-overflow: unset;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-top: 6px;
+  line-height: 1.5;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.activity-expand-icon {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-left: 4px;
 }
 
 /* ====== Channel Cards ====== */

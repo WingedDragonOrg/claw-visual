@@ -644,7 +644,7 @@
 /* ====== Team Stats ====== */
 .team-stats {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 14px;
   margin-bottom: 28px;
 }
@@ -717,6 +717,11 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   margin-bottom: 14px;
+}
+
+.issue-stats-grid.team-overview-grid {
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
 }
 
 .issue-stat-item {
