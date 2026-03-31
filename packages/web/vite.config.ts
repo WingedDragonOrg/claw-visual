@@ -15,6 +15,9 @@ export default defineConfig({
       '/api': 'http://localhost:3200',
     },
   },
+  preview: {
+    allowedHosts: ['claw-visual.zxyh.club'],
+  },
   build: {
     outDir: 'dist',
   },
