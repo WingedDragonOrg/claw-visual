@@ -91,7 +91,7 @@ async function getSheet(path: string): Promise<Spritesheet> {
 // ──────────────────────────────────────────────
 // Lerp movement constants
 // ──────────────────────────────────────────────
-const LERP_SPEED = 0.06; // fraction of distance per frame
+const LERP_SPEED = 0.12; // fraction of distance per frame
 
 // ──────────────────────────────────────────────
 // AgentSprite
