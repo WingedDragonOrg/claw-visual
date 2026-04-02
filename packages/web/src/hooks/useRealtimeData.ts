@@ -60,6 +60,11 @@ export function useRealtimeData<T>(
     }
   }, [fetcher]);
 
+  // Poll immediately on WebSocket reconnect to sync state
+  useEffect(() => {
+    if (wsConnected) poll();
+  }, [wsConnected, poll]);
+
   const clearTimers = useCallback(() => {
     if (retryTimer.current) {
       clearTimeout(retryTimer.current);
