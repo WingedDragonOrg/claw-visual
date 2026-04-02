@@ -149,6 +149,36 @@ export class PixiApp {
     }, { passive: false });
 
     // Pan via drag
+    // Pinch-to-zoom (mobile)
+    let lastPinchDist = 0;
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        lastPinchDist = Math.sqrt(dx * dx + dy * dy);
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (lastPinchDist > 0) {
+          const scaleFactor = dist / lastPinchDist;
+          const newScale = Math.max(this.MIN_SCALE, Math.min(this.MAX_SCALE, this._scale * scaleFactor));
+          this._scale = newScale;
+          this.applyWorldTransform();
+        }
+        lastPinchDist = dist;
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', () => {
+      lastPinchDist = 0;
+    });
     canvas.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
       isPanning = true;

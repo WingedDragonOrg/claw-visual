@@ -5,7 +5,7 @@ import './styles/main.css';
 
 const savedTheme = localStorage.getItem('claw-theme');
 if (savedTheme === 'light') {
-  document.documentElement.setAttribute('data-theme', 'light');
+  // Theme managed by PixiApp.setTheme()
 }
 
 createRoot(document.getElementById('root')!).render(

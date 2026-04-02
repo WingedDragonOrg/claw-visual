@@ -322,3 +322,65 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Mobile adaptation ─────────────────────────────────────── */
+@media (max-width: 600px) {
+  .pxo-root {
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .pxo-sidebar {
+    display: none;
+  }
+
+  .pxo-canvas-wrap {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+  }
+
+  .pxo-canvas-wrap canvas {
+    width: 100% !important;
+    height: 100% !important;
+    touch-action: none;
+  }
+
+  .pxo-overlay-controls {
+    bottom: 80px;
+    right: 8px;
+  }
+
+  .pxo-theme-switcher {
+    top: 8px;
+    right: 8px;
+    flex-wrap: wrap;
+    max-width: 120px;
+    justify-content: flex-end;
+  }
+
+  .pxo-theme-label {
+    display: none;
+  }
+
+  .pxo-popup {
+    left: 16px !important;
+    right: 16px !important;
+    width: auto !important;
+    max-width: 300px;
+  }
+
+  .pxo-agent-card {
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+  }
+}
+
+/* Prevent overscroll / pull-to-refresh on canvas area */
+@media (max-width: 900px) {
+  body {
+    overscroll-behavior: none;
+  }
+}

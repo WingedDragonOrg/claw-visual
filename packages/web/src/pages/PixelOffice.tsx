@@ -93,11 +93,14 @@ export function PixelOffice() {
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState('--:--:--');
 
-  // Apply theme to PixiApp
+  // Apply theme to PixiApp + CSS data-theme
   useEffect(() => {
     if (pixiRef.current?.isReady()) {
       pixiRef.current.setTheme(theme);
     }
+    // Sync CSS data-theme: 'day' → light, all others → dark
+    const cssTheme = theme === 'day' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', cssTheme);
   }, [theme]);
 
   // Unlock audio on first interaction
